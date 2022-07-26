@@ -55,6 +55,7 @@ if __name__ == "__main__":
     throttle = 0
     steer = 0
     count = 0
+    bias_roll=0
     red_flag = False
     green_flag = False
     blueline_flag = False
@@ -107,18 +108,28 @@ if __name__ == "__main__":
         #gyro.change_steer()
 
         #print("red,green",red_flag,green_flag)
-        """if red_flag:
-            #avoid_color_sign.avoidRed()
-            avoid_color_sign.setBias(20)
+        if red_flag:
+            avoid_color_sign.avoidRed()
+            avoid_color_sign.setBias(-15)
+            bias_roll=0
         elif green_flag:
-            #avoid_color_sign.avoidGreen()
-            avoid_color_sign.setBias(-20)"""
-        if True:
+            avoid_color_sign.avoidGreen()
+            avoid_color_sign.setBias(15)
+            bias_roll=0
+        elif True:
             #print("bias",avoid_color_sign.bias)
-            gyro.straightening(20,0)
-            gyro.change_steer()
+            #gyro.straightening(20,0)
+            if bias_roll>=600:
+                bias_roll=0
+                avoid_color_sign.bias=0
+                print("bias reset")
+            st_roll=motor.get()[0]
+            gyro.straightening(20,avoid_color_sign.bias)
+            en_roll=motor.get()[0]
+            bias_roll+=en_roll-st_roll
+            gyro.back_turn(20)
+            #gyro.change_steer()
 
-            #gyro.straightening(20,avoid_color_sign.bias)
 
 
         resetSerialBuffer()

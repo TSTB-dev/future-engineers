@@ -1,42 +1,83 @@
 import cv2
+import os
 import numpy as np
-import time
 import serial
+#from pylsd.lsd import lsd
 
 def red_detect(img):
     # HSV色空間に変換
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-
+    """
     # 赤色のHSVの値域1
-    hsv_min = np.array([0,127,0])
-    hsv_max = np.array([30,255,255])
+    hsv_min = np.array([0,127,5])
+    hsv_max = np.array([10,255,255])
     mask1 = cv2.inRange(hsv, hsv_min, hsv_max)
 
     # 赤色のHSVの値域2
 
-    hsv_min = np.array([150,127,50])
+    hsv_min = np.array([150,127,5])
     hsv_max = np.array([180,255,255])
     mask2 = cv2.inRange(hsv, hsv_min, hsv_max)
+    """
+    # 赤色のHSVの値域1
+    hsv_min = np.array([0,200,20])
+    hsv_max = np.array([10,255,255])
+    mask1 = cv2.inRange(hsv, hsv_min, hsv_max)
+
+    # 赤色のHSVの値域2
+
+    hsv_min = np.array([170,200,20])
+    hsv_max = np.array([180,255,255])
+    mask2 = cv2.inRange(hsv, hsv_min, hsv_max)
+
     return mask1 + mask2
 
-def red_detect_rgb(img):
-    hsv_min = np.array([50,0,0])
-    hsv_max = np.array([255,50,50])
-    mask1 = cv2.inRange(img, hsv_min, hsv_max)
 
-    return mask1
 
 def green_detect(img):
     # HSV色空間に変換
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
     # 緑色のHSVの値域
-    hsv_min = np.array([30,64,20])
+    hsv_min = np.array([45,64,30])
     hsv_max = np.array([90,255,255])
     mask1 = cv2.inRange(hsv, hsv_min, hsv_max)
 
     return mask1
 
+def blue_detect(img):
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+    # 青のHSVの値域
+    hsv_min = np.array([104,25,20])
+    hsv_max = np.array([124,255,255])
+    mask1 = cv2.inRange(hsv, hsv_min, hsv_max)
+
+    return mask1
+
+"""
+def frame_lsd(img):
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    lines = lsd(hsv)
+    for i in range(lines.shape[0]):
+        pt1 = (int(lines[i, 0]), int(lines[i, 1]))
+        pt2 = (int(lines[i, 2]), int(lines[i, 3]))
+        width = lines[i, 4]
+        lsd_frame=cv2.line(src, pt1, pt2, (0, 0, 255), int(np.ceil(width / 2)))
+
+    return lsd_frame
+"""
+
+def orange_detect(img):
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+    # orengeのHSVの値域
+    hsv_min = np.array([5,30,20])
+    hsv_max = np.array([20,255,255])
+    mask1 = cv2.inRange(hsv, hsv_min, hsv_max)
+
+    return mask1
 
 def analysis_blob(binary_img):
     #connectedComponentsWithStatsmはオブジェクト（連結領域）を検出するメソッド
@@ -58,7 +99,6 @@ def analysis_blob(binary_img):
     #面積が最大値のラベルのインデックス
     max_index = np.argmax(data[:, 4])
 
-
     #一番大きいオブジェクトの情報を抽出
     #maxblob = {}
     #maxblob["upper_left"] = (data[:, 0][max_index], data[:, 1][max_index]) # 左上座標
@@ -71,30 +111,43 @@ def analysis_blob(binary_img):
 
     return area
 
-def detect_sign(threshold, cap, mode=""):
-
+def detect_sign(threshold, cap, mode="", frame_writer=None):
+    #cap = cv2.VideoCapture(0)
     is_red = False
     is_green = False
 
     assert cap.isOpened(), "カメラを認識していません！"
-    ret, f = cap.read()
+    ret, frame = cap.read()
 
-    frame = cv2.rotate(f, cv2.ROTATE_180)
+    frame = cv2.rotate(frame, cv2.ROTATE_180)
         # 赤色検出
-
+    cv2.imshow("frame", frame)
     mask_red = red_detect(frame)
     mask_green = green_detect(frame)
+    mask_blue=blue_detect(frame)
+    mask_orange=orange_detect(frame)
+    print("mask_size: {}".format(frame.shape))
+    #mask_line=frame_lsd(frame)
 
     cv2.imshow("Frame", frame)
     cv2.imshow("Mask red", mask_red)
     cv2.imshow("Mask green", mask_green)
+    #cv2.imshow("Mask blue", mask_blue)
+    #cv2.imshow("Mask orange", mask_orange)
+    #cv2.imshow("Mask line",mask_line);
 
+    '''
     if cv2.waitKey(25) & 0xFF == ord('q'):
-
         cv2.destroyAllWindows()
+    '''
+
+            #フレームを記録する
+    if mode == "recording":
+        frame_writer.write(frame)
 
     area_red = analysis_blob(mask_red)
     area_green = analysis_blob(mask_green)
+    area_blue = analysis_blob(mask_blue)
 
     #print("area red: {}, area green: {}".format(area_red, area_green))
 
@@ -106,9 +159,6 @@ def detect_sign(threshold, cap, mode=""):
     elif area_green > threshold:
         is_green = True
 
-    cv2.imshow("Frame", frame)
-    cv2.imshow("Mask red", mask_red)
-    cv2.imshow("Mask green", mask_green)
     #return is_red, is_green
     return is_red, is_green, frame, mask_red, mask_green
 
@@ -123,10 +173,17 @@ def main():
         mask_red = red_detect(frame)
         #緑色検出
         mask_green = green_detect(frame)
+        #青色検出
+        mask_blue = blue_detect(frame)
+
+
+
 
         # マスク画像をブロブ解析（標識と判定されたブロブ情報を取得）
         max_blob_red = analysis_blob(mask_red)
         max_blob_green = analysis_blob(mask_green)
+        max_blob_blue = analysis_blob(mask_blue)
+
 
         # is_red, is_green = detect_sign(frame)
 
@@ -142,10 +199,34 @@ def main():
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
-    #cap = cv2.VideoCapture(0)
-    main()
-    #while True:
-    #    detect_sign(20000, cap)
+    cap = cv2.VideoCapture(0)
+    frame_rate = 30
+    size = (640, 480)
+    fmt = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+    os.makedirs("../../results/", exist_ok = True)
+    frame_writer = cv2.VideoWriter('../../results/after.mp4', fmt, frame_rate, size)
+
+
+    WIDTH = 640
+    HEIGHT = 480
+    FPS = 30
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, WIDTH)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, HEIGHT)
+    cap.set(cv2.CAP_PROP_FPS, FPS)
+
+    #fourcc = decode_fourcc(cap.get(cv2.CAP_PROP_FOURCC))
+    width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+    height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('B', 'G', 'R', '3'))
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    print("fps:{}　width:{}　height:{}".format(fps, width, height))
+
+    while True:
+        detect_sign(20000, cap, mode="recording", frame_writer=frame_writer)
+        if cv2.waitKey(25) & 0xFF == ord('q'):
+            break
+    cv2.destroyAllWindows()
+    frame_writer.release()
     """
     cap = cv2.VideoCapture(0)
     print(cap.set(cv2.CAP_PROP_FPS, 40))

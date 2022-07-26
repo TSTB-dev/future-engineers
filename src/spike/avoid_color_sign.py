@@ -1,7 +1,7 @@
 from basic_motion import Basic_motion
 import hub
 class Avoid_color_sign(Basic_motion):
-    avoid_angle = 80
+    avoid_angle = 120
     speed = 20
     bias = 0
     def __init__(self,motor_steer,motor):

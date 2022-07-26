@@ -4,6 +4,7 @@ import time
 import color_tracking
 import cv2
 import os
+#from pylsd.lsd import lsd
 
 ser = serial.Serial('/dev/ttyAMA1', 115200)
 throttle = 20
