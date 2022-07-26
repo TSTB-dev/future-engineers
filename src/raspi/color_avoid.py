@@ -52,14 +52,18 @@ frame_writer = cv2.VideoWriter('../../results/frame.mp4', fmt, frame_rate, size)
 start = time.perf_counter()
 while True:
     is_red, is_green = 0, 0
+    ok_blue,ok_orange = False, False
     red , green = 0, 0
-    is_red, is_green, frame, mask_red, mask_green = color_tracking.detect_sign(threshold, cap)
+    is_red, is_green,ok_blue,ok_orange, frame, mask_red, mask_green = color_tracking.detect_sign(threshold, cap)
 
     if is_red:
         red = 1
     if is_green:
         green = 1
 
+    print("ok_blue:",ok_blue)
+    print("ok_orange",ok_orange)
+    time.sleep(30/1000)
     if mode == "recording":
         frame_writer.write(frame)
         #red_writer.write(mask_red)

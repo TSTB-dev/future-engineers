@@ -8,7 +8,9 @@ class Basic_motion:
         self.motor.run_at_speed(throttle)
         once = False
         while True:
+
             if(self.motor_steer.busy(type=1)): #if motor_steer is moving
+                #print("motor_steer:",self.motor_steer.get(2)[0])
                 continue
             elif once:
                 break

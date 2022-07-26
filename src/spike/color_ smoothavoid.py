@@ -7,10 +7,10 @@ from gyro import Gyro
 print("--devce init--")
 
 while True:
-    motor = hub.port.C.motor
+    motor = hub.port.A.motor
     motor_steer = hub.port.E.motor
     ser = hub.port.D
-    light_sensor = hub.port.A.device
+    light_sensor = hub.port.C.device
     if ser == None or motor == None or motor_steer == None or light_sensor == None:
         print("Please check port!!")
         time.sleep(1)

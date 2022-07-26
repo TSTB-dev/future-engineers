@@ -10,23 +10,17 @@ class Gyro(Basic_motion):
         self.direction=1
         self.destination=0
 
-
     def straightening(self,throttle,bias):
         repair_yaw = hub.motion.yaw_pitch_roll()[0]
-        print("destination: ",self.destination)
-        """
-        if -repair_yaw%360 >= 180:
-            if(repair_yaw<0):
-                repair_yaw=  repair_yaw+360
-                #self.destination=self.destination-360
-        """
+        #print("destination: ",self.destination)
+
 
         self.difference_steer = int(
-            -4 * (repair_yaw - (self.destination + bias)%360*self.direction)
+            -4 * (repair_yaw - (self.destination + bias)*self.direction)
         )  # steer's value difinition by hub.motion.position
-        print("before_yaw: ",hub.motion.yaw_pitch_roll()[0])
-        print("repair_yaw: ",repair_yaw)
-        print("dirrerencesteer: ",self.difference_steer/4)
+        #print("before_yaw: ",hub.motion.yaw_pitch_roll()[0])
+        #print("repair_yaw: ",repair_yaw)
+        #print("dirrerencesteer: ",self.difference_steer/4)
 
         if self.difference_steer < -120:
             self.difference_steer = -120
@@ -34,7 +28,8 @@ class Gyro(Basic_motion):
             self.difference_steer = 120
 
         super().move(throttle,self.difference_steer)
-        return 0;
+        return 0
+
 
     def change_steer(self):
         h = self.light_sensor.get(2)[0]
