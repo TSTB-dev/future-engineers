@@ -58,12 +58,15 @@ start = time.perf_counter()
 rotation_mode = ""
 steer = 0
 while True:
+    #start = time.time()
     blob_red, blob_green = {},{};
     area_red, area_green = 0, 0
     ok_blue,ok_orange = False, False
     red , green = 0, 0
 
     blob_red, blob_green,ok_blue,ok_orange, frame, mask_red, mask_green = color_tracking.detect_sign_area(threshold, cap)
+
+
     area_red = blob_red["area"]
     area_green = blob_green["area"]
 
@@ -94,21 +97,24 @@ while True:
         if ok_orange:
             rotation_mode = "orange"
     steer = 0
-    #print("red_raito:{},green_raito:{}".format(red_raito,green_raito))
-    if red_raito >= 0.015 or green_raito >= 0.015:#標識認識によるsteer値の決定
+    print("red_raito:{},green_raito:{}".format(red_raito,green_raito))
+    speed = 10
+    if red_raito >= 0.012 or green_raito >= 0.012:#標識認識によるsteer値の決定
         center_frame = width/2
         if red_raito > green_raito:
-            if red_raito < 0.15: #tracking
+            if red_raito < 0.08: #tracking
                 #-70〜70で、標識に向かっていくようなsteer値を返す式
-                steer = 500 * red_raito * (center_red_x-center_frame) /(width/2)
+                steer = 1400 * red_raito * ((center_red_x-center_frame) /(width/2) ** 0.95 )
             else: #avoid
-                steer =  700 * (red_raito** 1.3)
+                steer =  1700 * (red_raito** 1.3)
+                speed = 30
         else:
-            if green_raito < 0.15: #tracking
+            if green_raito < 0.08: #tracking
                 #-70〜70で、標識に向かっていくようなsteer値を返す式
-                steer = 500 * green_raito * (center_green_x-center_frame) /(width/2)
+                steer = 1400 * green_raito * ((center_green_x-center_frame) /(width/2) ** 0.95 )
             else: #avoid
-                steer = -( 700 * (green_raito ** 1.3))
+                steer = -( 1700 * (green_raito ** 1.3))
+                speed = 50
     #print("steer:",steer)
 
     rmode = 0
@@ -120,10 +126,10 @@ while True:
     steer_int = int(steer)
     if steer_int > 120:
         steer_int = 120
-    elif steer_int < -120:
-        steer_int = -120
-    print("steer_int:{}".format(steer_int))
-    speed = 20
+    elif steer_int < -80:
+        steer_int = -80
+    #print("steer_int:{},rmode:{}".format(steer_int,rmode))
+
     #time.sleep(30/1000)
 
 
@@ -137,13 +143,13 @@ while True:
     '''
 
     for i in range (1) :#読み飛ばす処理（遅延して昔の値を取っている場合があるため）
-        img = cap.read()
-
-
+       img = cap.read()
+    #end = time.time()
+    #print("elapse_time: {}[ss]".format((end-start)))
     end = time.perf_counter()
     elapsed_time = end-start
-    if elapsed_time > 500:
-        break
+    #if elapsed_time > 500:
+        #break
 
 cv2.destroyAllWindows()
 frame_writer.release()
