@@ -11,8 +11,8 @@ while True:
     motor = hub.port.C.motor
     motor_steer = hub.port.E.motor
     ser = hub.port.D
-    light_sensor = hub.port.A.device
-    if ser == None or motor == None or motor_steer == None or light_sensor == None:
+    #light_sensor = hub.port.A.device
+    if ser == None or motor == None or motor_steer == None:
         print("Please check port!!")
         time.sleep(1)
         continue
@@ -20,14 +20,14 @@ while True:
     motor.mode(2)
     ser.mode(hub.port.MODE_FULL_DUPLEX)
     motor_steer.mode(2)
-    light_sensor.mode(6)
+    #light_sensor.mode(6)
     time.sleep(2)
     ser.baud(115200)
     time.sleep(1)
     break
 
 avoid_color_sign = Avoid_color_sign(motor_steer,motor)
-gyro = Gyro(motor_steer,motor,light_sensor)
+gyro = Gyro(motor_steer,motor)
 basic = Basic_motion(motor_steer,motor)
 def resetSerialBuffer():
     while True:
@@ -62,10 +62,13 @@ if __name__ == "__main__":
 
     sign_flag = 0
     last_flag = 0
+
+    memory_sign = [[0,0],[0,0],[0,0],[0,0]]
+
+    done_firstsec = False
     while True:
         cmd = ""
         while True:
-
             #time.sleep(50/1000)
             reply = ser.read(ser_size - len(cmd))
             reply = reply.decode("utf-8")
@@ -94,8 +97,20 @@ if __name__ == "__main__":
                 throttle = int(cmd_list[0].split(",")[1])
 
                 rot = int(cmd_list[0].split(",")[3])
+                #print("sectioncount:",gyro.section_count)
+                #print("done_firstsec:",done_firstsec)
                 if (int(sign_flag) !=  int(cmd_list[0].split(",")[2]))and(sign_flag!=0):
                     last_flag=sign_flag
+                    section_count = gyro.section_count
+                    sign_count = gyro.sign_count
+
+                    if section_count >= 0 and section_count < 4 and gyro.sign_count < 2:
+                        memory_sign[section_count][sign_count] = sign_flag
+                        gyro.sign_count = gyro.sign_count + 1
+                        print("sec,signcount:",gyro.section_count,gyro.sign_count)
+                        print("sign_flag,last_flag;",sign_flag,last_flag)
+                        print("memory_sign:",memory_sign)
+
                 sign_flag = int(cmd_list[0].split(",")[2])
                 break
 
@@ -105,7 +120,8 @@ if __name__ == "__main__":
             motor_steer.barke()
             break
         #標識を何も認識していない時は0で、認識している時は0以外を返すようにしている
-        if  steer == 0:
+
+        if sign_flag == 0:
             if bias_roll>=600:
                 bias_roll=0
                 avoid_color_sign.bias=0
@@ -117,22 +133,54 @@ if __name__ == "__main__":
 
             #gyro.change_steer()
         else:
-            if steer > 0 :#red
+            yow = hub.motion.yaw_pitch_roll()[0]
+            print("yow:",yow)
+            if sign_flag == 1 :#red
                 avoid_color_sign.setBias(0)
                 bias_roll=0
-            else: #green
+                info_yow = yow/5
+                if yow > 35:
+                    steer = 0
+            elif sign_flag == 2: #green
                 avoid_color_sign.setBias(0)
                 bias_roll=0
-
-            basic.move(throttle,steer)
-        h = light_sensor.get(2)[0]
+                if yow < -35:
+                    steer = 0
+                info_yow = -1 * yow/5
+            info_yow = 0
+            basic.move(throttle,steer + info_yow)
+        """h = light_sensor.get(2)[0]
         s = light_sensor.get(2)[1]
-        v = light_sensor.get(2)[2]
+        v = light_sensor.get(2)[2]"""
         blue_camera = (rot == 1)
         orange_camera = (rot == 2)
-        terms_light_sensor = (h >  210-130) and ( h < 210+130) and(s > 256) and (s < 1024) and(v >= 0) and (v <= 1023)
+        #terms_light_sensor = (h >  210-130) and ( h < 210+130) and(s > 256) and (s < 1024) and(v >= 0) and (v <= 1023)
 
-        gyro.back_turn(40,rot)
+
+        if sign_flag != 0:
+            if rot == 1:
+                if sign_flag ==1:
+                    if gyro.back_turn(40,rot):
+                        gyro.sign_count = 0
+                        print("1 1")
+                elif sign_flag==2:
+                    if gyro.change_steer(40,rot,0):
+                        gyro.sign_count = 0
+                        print("1 2")
+            elif rot==2:
+                if sign_flag ==2:
+                    if gyro.back_turn(40,rot):
+                        gyro.sign_count = 0
+                        print("2 2")
+                elif sign_flag==1:
+                    if gyro.change_steer(40,rot,0):
+                        gyro.sign_count = 0
+                        print("2 1")
+        else:
+            if gyro.change_steer(40,rot,0):
+                gyro.sign_count = 0
+            #print(memory_sign)
+
         """
         if rot==1:
             if last_flag==0 or last_flag==1:

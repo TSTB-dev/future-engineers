@@ -104,28 +104,42 @@ while True:
 
     steer = 0
     max_area = 0.4
-    speed = 25
+    speed = 30
     rmode = 0
+    print("red_raito:",red_raito)
     if red_raito >= 0.0025 or green_raito >= 0.0025:#標識認識によるsteer値の決定
         center_frame = width/2
         if red_raito > green_raito:
             if red_raito < 0.4: #tracking past:0.02
                 sign_flag = 1
-
+                if rotation_mode == "orange" and center_red_x/width < 0.1:
+                    sign_flag = 0
+                    if green_raito > 0.001:
+                        sign_flag = 2
                 distance = red_raito/max_area
-                wide = (center_red_x/width)-0.5 + 0.25
+                wide = (center_red_x/width)-0.5 + 0.2
                 if wide > 1:
                     wide = 1
 
 
-                steer = (50 * 4 ) / max_area * (90-(np.arccos(wide * distance) * 180 )/ np.pi)
+                steer = (15 * 4 ) / max_area * (90-(np.arccos(wide * distance) * 180 )/ np.pi)
 
                 #避ける方向と逆方向に曲がる必要がある時は緩和する
                 #0でもよさそう
+                if red_raito < 0.003:
+                    steer = steer * 0.5
                 if steer < 0:
-                    steer = steer * 0.1
+                    if red_raito > 0.017:
+                        steer = steer * 0.1
+                    else:
+                        steer = steer * 0.5
 
                 #近づきすぎた時の緊急回避（あんまり機能してない）
+                if red_raito > 0.017 and steer < 0 and center_red_x/width > -0.3:
+                    steer = 50
+                #if red_raito > 0.017 and steer >= 1 and steer < 30:
+                    #steer = steer * 2
+
                 if red_raito > 0.15: #avoid
                     #steer =  1700 * (red_raito** 1.3)
                     steer = 120
@@ -137,22 +151,40 @@ while True:
                     steer = 1
 
         else:
-            if green_raito < 0.5: #tracking past:0.02
+            if green_raito < 0.4: #tracking past:0.02
                 sign_flag = 2
-
                 distance = green_raito/max_area
-                wide = (center_green_x/width)-0.5 - 0.25
+                print("center_green_x/width:",center_green_x/width)
+                if rotation_mode == "blue" and center_green_x/width > 0.9:
+                    sign_flag = 0
+                    if red_raito > 0.001:
+                        sign_flag = 1
+                wide = (center_green_x/width)-0.5 - 0.2
                 if wide  < -1:
                     wide = -1
 
-                steer = 50 * 4 / max_area * (90-(np.arccos(wide * distance) * 180 )/ np.pi)
-
+                steer = 15 * 4 / max_area * (90-(np.arccos(wide * distance) * 180 )/ np.pi)
+                if green_raito < 0.003:
+                    steer = steer * 0.5
                 #避ける方向と逆方向に曲がる必要がある時は緩和する
                 #0でもよさそう
                 if steer > 0:
-                    steer = steer * 0.1
+                    if green_raito > 0.017:
+                        steer = steer * 0.1
+                    else:
+                        steer = steer * 0.5
 
                 #近づきすぎた時の緊急回避（あんまり機能してない）
+
+                if green_raito > 0.017 and steer > 0 and center_green_x/width < 0.3:
+                    steer = -50
+
+
+                #if green_raito > 0.017 and steer <= -1 and steer > -30:
+                    #steer = steer * 2
+                #if green_raito > 0.017 and steer >=1 and steer <=20:
+                    #steer = steer * 2
+
                 if green_raito > 0.15: #avoid
                     #steer = -( 1700 * (green_raito ** 1.3))
                     steer = -120

@@ -1,3 +1,4 @@
+
 import cv2
 import numpy as np
 import time
@@ -8,13 +9,13 @@ def red_detect(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
     # 赤色のHSVの値域1
-    hsv_min = np.array([0,128,30])
+    hsv_min = np.array([0,100,30])
     hsv_max = np.array([1,255,255])
     mask1 = cv2.inRange(hsv, hsv_min, hsv_max)
 
     # 赤色のHSVの値域2
 
-    hsv_min = np.array([150,128,30])
+    hsv_min = np.array([150,100,30])
     hsv_max = np.array([180,255,255])
     mask2 = cv2.inRange(hsv, hsv_min, hsv_max)
     return mask1 + mask2
@@ -64,8 +65,8 @@ def blue_detect(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
     #buleHSVの値域
-    hsv_min = np.array([90,48,50])
-    hsv_max = np.array([150,255,255])
+    hsv_min = np.array([100,48,55])
+    hsv_max = np.array([120,255,255])
     mask1 = cv2.inRange(hsv, hsv_min, hsv_max)
 
     return mask1
@@ -176,15 +177,15 @@ def detect_sign(threshold, cap, mode=""):
     mask_blue = blue_detect(frame)
     mask_orange = orange_detect(frame)
 
-    cv2.imshow("Frame", frame)
+    """cv2.imshow("Frame", frame)
     cv2.imshow("Mask red", mask_red)
-    cv2.imshow("Mask green", mask_green)
+    cv2.imshow("Mask green", mask_green)"""
 
 
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    """if cv2.waitKey(1) & 0xFF == ord('q'):
 
-        cv2.destroyAllWindows()
+        cv2.destroyAllWindows()"""
 
     area_red = analysis_blob(mask_red)
     area_green = analysis_blob(mask_green)
@@ -221,11 +222,11 @@ def detect_sign(threshold, cap, mode=""):
         elif orange_y > height * 0.8:
             ok_orange = True
 
-    cv2.imshow("Frame", frame)
+    """cv2.imshow("Frame", frame)
     cv2.imshow("Mask red", mask_red)
     cv2.imshow("Mask green", mask_green)
     cv2.imshow("Mask orange",mask_orange)
-    cv2.imshow("Mask blue",mask_blue)
+    cv2.imshow("Mask blue",mask_blue)"""
     #return is_red, is_green
     return is_red, is_green,ok_blue,ok_orange ,frame, mask_red, mask_green
 
@@ -273,6 +274,7 @@ def detect_sign_area(threshold, cap, mode=""):#標識の面積を返すdetect_si
     assert cap.isOpened(), "カメラを認識していません！"
     ret, frame = cap.read()
     #frame = cv2.rotate(f, cv2.ROTATE_180)
+    #frame = cv2.rotate(f, cv2.ROTATE_180)
         # 赤色検出
 
     mask_red = red_detect(frame)
@@ -293,7 +295,6 @@ def detect_sign_area(threshold, cap, mode=""):#標識の面積を返すdetect_si
     mask_orange[0:int(3 * height/5),:] = 0
 
     """if cv2.waitKey(25) & 0xFF == ord('q'):
-
         cv2.destroyAllWindows()"""
 
 
@@ -347,6 +348,8 @@ def detect_sign_area(threshold, cap, mode=""):#標識の面積を返すdetect_si
     cv2.imshow("Mask green", mask_green)
     cv2.imshow("Mask orange",mask_orange)
     cv2.imshow("Mask blue",mask_blue)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        cv2.destroyAllWindows()
     #cv2.imshow("Mask black",mask_black)
     #return is_red, is_green
     return blob_red, blob_green,ok_blue,ok_orange ,frame, mask_red, mask_green
@@ -364,4 +367,3 @@ if __name__ == '__main__':
         is_red, is_green , frame, mask_red, mask_green= detect_sign(20000, cap)
         #end = time.perf_counter()
         #print("elapsed_time: {}[us]\n".format((end-start)*1000000))"""
-
