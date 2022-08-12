@@ -9,13 +9,13 @@ def red_detect(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
     # 赤色のHSVの値域1
-    hsv_min = np.array([0,100,30])
-    hsv_max = np.array([1,255,255])
+    hsv_min = np.array([0,80,30])
+    hsv_max = np.array([0,255,255])
     mask1 = cv2.inRange(hsv, hsv_min, hsv_max)
 
     # 赤色のHSVの値域2
 
-    hsv_min = np.array([150,100,30])
+    hsv_min = np.array([150,80,30])
     hsv_max = np.array([180,255,255])
     mask2 = cv2.inRange(hsv, hsv_min, hsv_max)
     return mask1 + mask2
@@ -27,7 +27,7 @@ def black_detect(img):
 
     # 黒色のHSVの値域
     hsv_min = np.array([0,0,0])
-    hsv_max = np.array([180,255,50])
+    hsv_max = np.array([180,255,100])
     mask1 = cv2.inRange(hsv, hsv_min, hsv_max)
 
     return mask1
@@ -43,8 +43,16 @@ def green_detect(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
     # 緑色のHSVの値域
-    hsv_min = np.array([50,128,35])
+
+    hsv_min = np.array([70,120,30])
     hsv_max = np.array([90,255,255])
+
+    #hsv_min = np.array([30,100,30])
+    #hsv_max = np.array([60,255,255])
+
+    #hsv_min = np.array([60,100,45])
+    #hsv_max = np.array([90,255,255])
+
     mask1 = cv2.inRange(hsv, hsv_min, hsv_max)
 
     return mask1
@@ -54,7 +62,7 @@ def orange_detect(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
     # orangeのHSVの値域
-    hsv_min = np.array([0,48,20])
+    hsv_min = np.array([0,40,20])
     hsv_max = np.array([30,255,255])
     mask1 = cv2.inRange(hsv, hsv_min, hsv_max)
 
@@ -65,8 +73,8 @@ def blue_detect(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
     #buleHSVの値域
-    hsv_min = np.array([100,48,55])
-    hsv_max = np.array([120,255,255])
+    hsv_min = np.array([100,68,75])
+    hsv_max = np.array([120,255,200])
     mask1 = cv2.inRange(hsv, hsv_min, hsv_max)
 
     return mask1
@@ -271,28 +279,55 @@ def detect_sign_area(threshold, cap, mode=""):#標識の面積を返すdetect_si
     ok_blue = False
     ok_orange = False
 
+    clip_ratio = 0.375 #clip in the top of image for the specific ratio
     assert cap.isOpened(), "カメラを認識していません！"
     ret, frame = cap.read()
+    clip_threshold = int(clip_ratio*frame.shape[0])
+    cliped_frame = frame[clip_threshold:,:,:]
+    frame = cv2.resize(frame, dsize=(160, 120))
     #frame = cv2.rotate(f, cv2.ROTATE_180)
     #frame = cv2.rotate(f, cv2.ROTATE_180)
         # 赤色検出
 
+    frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    #frame_hsv[:, :, (0)] = frame_hsv[:, :, (0)]
+    #frame_hsv[:, :, (1)] = np.clip(frame_hsv[:, :, (1)]*1.5,0,255)
+    #frame_hsv[:, :, (2)] = np.clip(frame_hsv[:, :, (2)]*1.9,0,255)
+    frame = cv2.cvtColor(frame_hsv, cv2.COLOR_HSV2BGR)
+    #frame[:,:,(1)] = np.clip(frame[:,:,(1)] * 1.5,0,255)
+    """
+    gamma = 0.5
+    gamma_cvt = np.zeros((256,1), dtype=np.uint8)
+    for i in range(256):
+        gamma_cvt[i][0] = 255*(float(i)/255)**(1.0/gamma)
+    frame = cv2.LUT(frame,gamma_cvt)
+    """
     mask_red = red_detect(frame)
     mask_green = green_detect(frame)
     mask_blue = blue_detect(frame)
     mask_orange = orange_detect(frame)
     mask_black = black_detect(frame)
+    mask_black_left = black_detect(frame)
+    mask_black_right = black_detect(frame)
 
 
-    #cv2.imshow("Frame", frame)
-    #cv2.imshow("Mask red", mask_red)
-    #cv2.imshow("Mask green", mask_green)
+
+
+    """cv2.imshow("Frame", frame)
+    cv2.imshow("Mask red", mask_red)
+    cv2.imshow("Mask green", mask_green)"""
 
     height, width, channels = frame.shape[:3]
     mask_red[0:int(2 * height/5),:] = 0
     mask_green[0:int(2 * height/5),:] = 0
     mask_blue[0:int(3 * height/5),:] = 0
     mask_orange[0:int(3 * height/5),:] = 0
+
+    mask_black_left[0:int(height/2),:] = 0
+    mask_black_left[int(height/2):int(height),int(width/2):int(width)] = 0
+
+    mask_black_right[0:int(height/2),:] = 0
+    mask_black_right[int(height/2):int(height),0:int(width/2)] = 0
 
     """if cv2.waitKey(25) & 0xFF == ord('q'):
         cv2.destroyAllWindows()"""
@@ -302,14 +337,29 @@ def detect_sign_area(threshold, cap, mode=""):#標識の面積を返すdetect_si
     blob_green = analysis_blob(mask_green)
     blob_orange = analysis_blob_line(mask_orange)
     blob_blue = analysis_blob_line(mask_blue)
+    blob_brack_right = analysis_blob_line(mask_black_right)
+    blob_brack_left = analysis_blob_line(mask_black_left)
 
+
+    black_left_area = blob_brack_left["area"]
+    black_right_area = blob_brack_right["area"]
+
+    black_right_raito = black_right_area * 4 / (width * height)
+    black_left_raito = black_left_area * 4 / (width * height)
+
+    #print("right_raito,left_raito:",black_right_raito,black_left_raito)
+    wall_right,wall_left = False,False
+    if black_right_raito > 0.78:
+        wall_right = True
+    elif black_left_raito > 0.78:
+        wall_left = True
 
     rcx = blob_red["center"][0]
     rcy = blob_red["center"][1]
     gcx = blob_green["center"][0]
     gcy = blob_green["center"][1]
-    cv2.circle(frame,(int(rcx),int(rcy)),15,(0,0,255))
-    cv2.circle(frame,(int(gcx),int(gcy)),15,(0,255,0))
+    #cv2.circle(frame,(int(rcx),int(rcy)),15,(0,0,255))
+    #cv2.circle(frame,(int(gcx),int(gcy)),15,(0,255,0))
 
     #print("area red: {}, area green: {}".format(area_red, area_green))
 
@@ -350,9 +400,11 @@ def detect_sign_area(threshold, cap, mode=""):#標識の面積を返すdetect_si
     cv2.imshow("Mask blue",mask_blue)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         cv2.destroyAllWindows()
-    #cv2.imshow("Mask black",mask_black)
+    cv2.imshow("Mask black",mask_black)
+    #cv2.imshow("Mask black left",mask_black_left)
+    #cv2.imshow("Mask black right",mask_black_right)
     #return is_red, is_green
-    return blob_red, blob_green,ok_blue,ok_orange ,frame, mask_red, mask_green
+    return blob_red, blob_green,ok_blue,ok_orange ,frame, mask_red, mask_green, cliped_frame,wall_right,wall_left
 if __name__ == '__main__':
     #cap = cv2.VideoCapture(0)
     main()

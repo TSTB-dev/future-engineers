@@ -24,6 +24,8 @@ while True:
     time.sleep(2)
     ser.baud(115200)
     time.sleep(1)
+    #print("default:",motor_steer.default())
+    #time.sleep(100)
     break
 
 avoid_color_sign = Avoid_color_sign(motor_steer,motor)
@@ -59,6 +61,7 @@ if __name__ == "__main__":
 
     count = 0
     bias_roll=0
+    last_run=1000000 #最後の切り返しからどれだけ進んだのか記録
 
     sign_flag = 0
     last_flag = 0
@@ -68,6 +71,9 @@ if __name__ == "__main__":
     done_firstsec = False
     while True:
         cmd = ""
+        if (gyro.section_count == 11) and (motor.get()[0]-last_run >= 2500):
+            basic.stop()
+            break
         while True:
             #time.sleep(50/1000)
             reply = ser.read(ser_size - len(cmd))
@@ -126,7 +132,7 @@ if __name__ == "__main__":
                 bias_roll=0
                 avoid_color_sign.bias=0
             st_roll=motor.get()[0]
-            gyro.straightening(30,avoid_color_sign.bias)
+            gyro.straightening(50,avoid_color_sign.bias)
 
             en_roll=motor.get()[0]
             bias_roll+=en_roll-st_roll
@@ -135,20 +141,28 @@ if __name__ == "__main__":
         else:
             yow = hub.motion.yaw_pitch_roll()[0]
             print("yow:",yow)
+            straight_flag = False
             if sign_flag == 1 :#red
                 avoid_color_sign.setBias(0)
                 bias_roll=0
                 info_yow = yow/5
-                if yow > 35:
+                if yow > 40:
                     steer = 0
+                if yow < -15 and  yow > -50 and steer > 0:
+                    steer = (-1 * yow) + steer
             elif sign_flag == 2: #green
                 avoid_color_sign.setBias(0)
                 bias_roll=0
-                if yow < -35:
+                if yow < -40:
                     steer = 0
+                if yow > 15 and  yow < 50 and steer < 0 :
+                    steer = (-1 * yow) + steer
                 info_yow = -1 * yow/5
             info_yow = 0
-            basic.move(throttle,steer + info_yow)
+            if straight_flag:
+                gyro.straightening(50,0)
+            else:
+                basic.move(throttle,steer + info_yow)
         """h = light_sensor.get(2)[0]
         s = light_sensor.get(2)[1]
         v = light_sensor.get(2)[2]"""
@@ -156,30 +170,36 @@ if __name__ == "__main__":
         orange_camera = (rot == 2)
         #terms_light_sensor = (h >  210-130) and ( h < 210+130) and(s > 256) and (s < 1024) and(v >= 0) and (v <= 1023)
 
-
-        if sign_flag != 0:
-            if rot == 1:
-                if sign_flag ==1:
-                    if gyro.back_turn(40,rot):
-                        gyro.sign_count = 0
-                        print("1 1")
-                elif sign_flag==2:
-                    if gyro.change_steer(40,rot,0):
-                        gyro.sign_count = 0
-                        print("1 2")
-            elif rot==2:
-                if sign_flag ==2:
-                    if gyro.back_turn(40,rot):
-                        gyro.sign_count = 0
-                        print("2 2")
-                elif sign_flag==1:
-                    if gyro.change_steer(40,rot,0):
-                        gyro.sign_count = 0
-                        print("2 1")
+        if gyro.section_count != 10:
+            if sign_flag != 0:
+                if rot == 1:
+                    if sign_flag ==1:
+                        if gyro.back_turn(50,rot,1600):
+                            gyro.sign_count = 0
+                            print("section_count:",gyro.section_count)
+                    elif sign_flag==2:
+                        if gyro.back_turn(50,rot,1200):
+                            gyro.sign_count = 0
+                            print("section_count:",gyro.section_count)
+                elif rot==2:
+                    if sign_flag ==2:
+                        if gyro.back_turn(50,rot,1600):
+                            gyro.sign_count = 0
+                            print("section_count:",gyro.section_count)
+                    elif sign_flag==1:
+                        if gyro.back_turn(50,rot,1200):
+                            gyro.sign_count = 0
+                            print("section_count:",gyro.section_count)
+            else:
+                if gyro.change_steer(40,rot,0):
+                    gyro.sign_count = 0
+                    print("section_count:",gyro.section_count)
+                #print(memory_sign)
         else:
-            if gyro.change_steer(40,rot,0):
+            if gyro.back_turn(40,rot,1400):
+                last_run=motor.get()[0]
                 gyro.sign_count = 0
-            #print(memory_sign)
+                print("section_count 11!!")
 
         """
         if rot==1:

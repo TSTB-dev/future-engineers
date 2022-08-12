@@ -10,7 +10,9 @@ import numpy as np
 ser = serial.Serial('/dev/ttyAMA1', 115200)
 throttle = 20
 
-time.sleep(1)
+data_dir = "/home/pi/WRO2022/data"
+save_dir = os.path.join(data_dir, "train")
+SAVE_FPS = 1
 
 def avoid_object(detect_red, detect_green):
     if detect_red:
@@ -34,10 +36,11 @@ def distance_controll(distance):
 print("--waiting SPIKE--")
 threshold = 10000#回避動作を開始する画像中の物体の面積
 steer = 0
-WIDTH =  160*4
-HEIGHT = 120*4
+WIDTH =  160*2
+HEIGHT = 120*2
 
 cap = cv2.VideoCapture(0)
+assert cap.isOpened(), "カメラを認識していません！"
 #cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('H', '2', '6', '4'));
 cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, WIDTH)
@@ -45,11 +48,14 @@ cap.set(cv2.CAP_PROP_FRAME_HEIGHT, HEIGHT)
 values = ""
 ser.reset_input_buffer()
 
+#cap.set(cv2.CAP_PROP_GAIN,-1)
+
 green = 0
 red = 0
 count = 0
-mode = "recording"
-
+_id = 0
+#mode = "get_img"
+mode = ""
 frame_rate = 10
 size = (640, 480)
 fmt = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
@@ -63,13 +69,15 @@ rotation_mode = ""
 steer = 0
 sign_flag = 0
 while True:
-    #start = time.time()
+    end = time.perf_counter()
+    elapsed_time = end - start
     blob_red, blob_green = {},{};
     area_red, area_green = 0, 0
     ok_blue,ok_orange = False, False
     red , green = 0, 0
     sign_flag = 0
-    blob_red, blob_green,ok_blue,ok_orange, frame, mask_red, mask_green = color_tracking.detect_sign_area(threshold, cap)
+    wall_right, wall_left = False, False
+    blob_red, blob_green,ok_blue,ok_orange, frame, mask_red, mask_green, cliped_frame,wall_right, wall_left = color_tracking.detect_sign_area(threshold, cap)
 
 
     area_red = blob_red["area"]
@@ -91,10 +99,12 @@ while True:
     #print("green_raito",green_raito)
     #print("red_raito",red_raito)
 
-    if mode == "recording":
-        frame_writer.write(frame)
-        #red_writer.write(mask_red)
-        #green_writer.write(mask_green)
+    if mode == "get_img" and elapsed_time > 1/SAVE_FPS:
+        id_path = "{:06}.png".format(_id)
+        frame_path = os.path.join(save_dir, id_path)
+        cv2.imwrite(frame_path, frame)
+        _id += 1
+        elapsed_time = 0
 
     if rotation_mode == "":# 周回の向き決定
         if ok_blue:
@@ -104,9 +114,9 @@ while True:
 
     steer = 0
     max_area = 0.4
-    speed = 30
+    speed = 50
     rmode = 0
-    print("red_raito:",red_raito)
+    #print("red_raito,green_raito:",red_raito,green_raito)
     if red_raito >= 0.0025 or green_raito >= 0.0025:#標識認識によるsteer値の決定
         center_frame = width/2
         if red_raito > green_raito:
@@ -118,28 +128,50 @@ while True:
                         sign_flag = 2
                 distance = red_raito/max_area
                 wide = (center_red_x/width)-0.5 + 0.2
+
+                #if red_raito < 0.006:
+                #    wide = wide - 0.1
+
                 if wide > 1:
                     wide = 1
 
 
                 steer = (15 * 4 ) / max_area * (90-(np.arccos(wide * distance) * 180 )/ np.pi)
 
+                #print("before_steer,center_red_x/width : ",steer,center_red_x/width)
                 #避ける方向と逆方向に曲がる必要がある時は緩和する
                 #0でもよさそう
                 if red_raito < 0.003:
                     steer = steer * 0.5
                 if steer < 0:
-                    if red_raito > 0.017:
-                        steer = steer * 0.1
-                    else:
+                    if center_red_x/width < 0.2:
+                        steer = 0
+                    if (red_raito > 0.03 and center_red_x/width > 0.3) or (red_raito > 0.04 and center_red_x/width > 0.05):
+                        steer = 60
+                    elif red_raito > 0.017 or (red_raito > 0.01 and center_red_x/width < 0.3):
+                        steer = 0
+                    elif red_raito > 0.01:
                         steer = steer * 0.5
+                    else:
+                        steer = (steer * 0.8)
 
-                #近づきすぎた時の緊急回避（あんまり機能してない）
-                if red_raito > 0.017 and steer < 0 and center_red_x/width > -0.3:
-                    steer = 50
+                elif steer > 0:
+                    if red_raito > 0.015:
+                        steer = steer * 1.6
+                    elif red_raito > 0.006:
+                        steer = steer * 1.6
+                    if center_red_x/width < 0.2:
+                        steer = steer * 1.3
+
+                #if red_raito > 0.017 and steer < 0 and center_red_x/width > 0.2:
+                    #steer = 50
+
                 #if red_raito > 0.017 and steer >= 1 and steer < 30:
                     #steer = steer * 2
-
+                if wall_right:
+                    steer = -80
+                elif wall_left:
+                    steer = 80
                 if red_raito > 0.15: #avoid
                     #steer =  1700 * (red_raito** 1.3)
                     steer = 120
@@ -154,12 +186,16 @@ while True:
             if green_raito < 0.4: #tracking past:0.02
                 sign_flag = 2
                 distance = green_raito/max_area
-                print("center_green_x/width:",center_green_x/width)
+                #print("center_green_x/width:",center_green_x/width)
                 if rotation_mode == "blue" and center_green_x/width > 0.9:
                     sign_flag = 0
                     if red_raito > 0.001:
                         sign_flag = 1
                 wide = (center_green_x/width)-0.5 - 0.2
+
+                #if green_raito < 0.006:
+                    #wide = wide + 0.1
+
                 if wide  < -1:
                     wide = -1
 
@@ -169,21 +205,42 @@ while True:
                 #避ける方向と逆方向に曲がる必要がある時は緩和する
                 #0でもよさそう
                 if steer > 0:
-                    if green_raito > 0.017:
-                        steer = steer * 0.1
-                    else:
+                    if center_green_x/width > 0.8:
+                        steer = 0
+                    if green_raito > 0.03 and center_green_x/width <= 0.7:
+                        steer = -60
+                    elif green_raito > 0.017 or (green_raito > 0.01 and center_green_x/width > 0.7):
+                        steer = 0
+                    elif red_raito > 0.01:
                         steer = steer * 0.5
+                    else:
+                        steer = (steer * 0.8)
+
+                elif steer < 0:
+                    if green_raito > 0.015:
+                        steer = steer * 1.6
+                    elif green_raito > 0.006:
+                        steer = steer * 1.6
+                    if center_green_x/width > 0.8:
+                        steer = steer * 1.3
 
                 #近づきすぎた時の緊急回避（あんまり機能してない）
 
-                if green_raito > 0.017 and steer > 0 and center_green_x/width < 0.3:
-                    steer = -50
+                #if green_raito > 0.017 and steer > 0 and center_green_x/width < 0.8:
+                 #   steer = -50
+
+                #if green_raito > 0.01 and steer < 0 and center_green_x/width <-0.3:
+                   # steer = 0
 
 
                 #if green_raito > 0.017 and steer <= -1 and steer > -30:
                     #steer = steer * 2
                 #if green_raito > 0.017 and steer >=1 and steer <=20:
                     #steer = steer * 2
+                if wall_right:
+                    steer = -80
+                elif wall_left:
+                    steer = 80
 
                 if green_raito > 0.15: #avoid
                     #steer = -( 1700 * (green_raito ** 1.3))
