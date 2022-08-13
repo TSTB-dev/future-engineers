@@ -11,6 +11,7 @@ while True:
     motor = hub.port.C.motor
     motor_steer = hub.port.E.motor
     ser = hub.port.D
+    center_button = hub.button.center
     #light_sensor = hub.port.A.device
     if ser == None or motor == None or motor_steer == None:
         print("Please check port!!")
@@ -41,7 +42,7 @@ def resetSerialBuffer():
 
 ser_size = 13
 
-if __name__ == "__main__":
+if True:
     time.sleep(1)
     start = time.ticks_us()
 
@@ -69,6 +70,9 @@ if __name__ == "__main__":
     memory_sign = [[0,0],[0,0],[0,0],[0,0]]
 
     done_firstsec = False
+
+    while not(center_button.is_pressed()):
+        pass
     while True:
         cmd = ""
         if (gyro.section_count == 11) and (motor.get()[0]-last_run >= 2500):
@@ -127,7 +131,7 @@ if __name__ == "__main__":
             break
         #標識を何も認識していない時は0で、認識している時は0以外を返すようにしている
 
-        if sign_flag == 0:
+        if sign_flag == 0 or sign_flag == 3:
             if bias_roll>=600:
                 bias_roll=0
                 avoid_color_sign.bias=0
@@ -148,15 +152,19 @@ if __name__ == "__main__":
                 info_yow = yow/5
                 if yow > 40:
                     steer = 0
-                if yow < -15 and  yow > -50 and steer > 0:
-                    steer = (-1 * yow) + steer
+                #if yow < -15 and  yow > -50 and steer > 0:
+                    #steer = (-1 * yow) + steer
+                if yow < 0 and yow > -60 and steer == 0:
+                    steer = 50
             elif sign_flag == 2: #green
                 avoid_color_sign.setBias(0)
                 bias_roll=0
                 if yow < -40:
                     steer = 0
-                if yow > 15 and  yow < 50 and steer < 0 :
-                    steer = (-1 * yow) + steer
+                #if yow > 15 and  yow < 50 and steer < 0 :
+                    #steer = (-1 * yow) + steer
+                if yow > 0 and yow < 60 and steer == 0:
+                    steer = -50
                 info_yow = -1 * yow/5
             info_yow = 0
             if straight_flag:
@@ -170,6 +178,11 @@ if __name__ == "__main__":
         orange_camera = (rot == 2)
         #terms_light_sensor = (h >  210-130) and ( h < 210+130) and(s > 256) and (s < 1024) and(v >= 0) and (v <= 1023)
 
+        if gyro.change_steer(40,rot,0):
+                    gyro.sign_count = 0
+                    print("section_count:",gyro.section_count)
+                #print(memory_sign)
+        """
         if gyro.section_count != 10:
             if sign_flag != 0:
                 if rot == 1:
@@ -200,6 +213,7 @@ if __name__ == "__main__":
                 last_run=motor.get()[0]
                 gyro.sign_count = 0
                 print("section_count 11!!")
+        """
 
         """
         if rot==1:

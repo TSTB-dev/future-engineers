@@ -44,7 +44,7 @@ def green_detect(img):
 
     # 緑色のHSVの値域
 
-    hsv_min = np.array([70,120,30])
+    hsv_min = np.array([65,140,30])
     hsv_max = np.array([90,255,255])
 
     #hsv_min = np.array([30,100,30])
@@ -73,7 +73,7 @@ def blue_detect(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
     #buleHSVの値域
-    hsv_min = np.array([100,68,75])
+    hsv_min = np.array([100,38,60])
     hsv_max = np.array([120,255,200])
     mask1 = cv2.inRange(hsv, hsv_min, hsv_max)
 
@@ -349,9 +349,9 @@ def detect_sign_area(threshold, cap, mode=""):#標識の面積を返すdetect_si
 
     #print("right_raito,left_raito:",black_right_raito,black_left_raito)
     wall_right,wall_left = False,False
-    if black_right_raito > 0.78:
+    if black_right_raito > 0.7:
         wall_right = True
-    elif black_left_raito > 0.78:
+    elif black_left_raito > 0.7:
         wall_left = True
 
     rcx = blob_red["center"][0]
@@ -378,12 +378,16 @@ def detect_sign_area(threshold, cap, mode=""):#標識の面積を返すdetect_si
     #print(blob_blue["upper_left"])
 
     #print("areablue,orange",blob_blue["area"]/(width*height),blob_orange["area"]/(width*height))
+
+    blue_center_y = 0
+    orange_center_y = 0
     if blob_blue != 0:
         blue_center = blob_blue["center"]
         blue_area = blob_blue["area"]
         if blue_area/(height * width) > 0.005 :
             if blue_center[1] > 3 * height / 4:
                 ok_blue = True
+            blue_center_y = blue_center[1]/height
         #print("blue_area,center:",blue_area,blue_center)
     if blob_orange != 0:
         orange_center = blob_orange["center"]
@@ -391,8 +395,8 @@ def detect_sign_area(threshold, cap, mode=""):#標識の面積を返すdetect_si
         if orange_area/(width * height) > 0.005 :
             if orange_center[1] > 3 * height / 4:
                 ok_orange = True
+            orange_center_y = orange_center[1]/height
         #print("orange_area,center:",orange_area,orange_center)
-
     cv2.imshow("Frame", frame)
     cv2.imshow("Mask red", mask_red)
     cv2.imshow("Mask green", mask_green)
@@ -404,7 +408,8 @@ def detect_sign_area(threshold, cap, mode=""):#標識の面積を返すdetect_si
     #cv2.imshow("Mask black left",mask_black_left)
     #cv2.imshow("Mask black right",mask_black_right)
     #return is_red, is_green
-    return blob_red, blob_green,ok_blue,ok_orange ,frame, mask_red, mask_green, cliped_frame,wall_right,wall_left
+
+    return blob_red, blob_green,ok_blue,ok_orange ,blue_center_y,orange_center_y,frame, mask_red, mask_green, cliped_frame,black_right_raito,black_left_raito
 if __name__ == '__main__':
     #cap = cv2.VideoCapture(0)
     main()

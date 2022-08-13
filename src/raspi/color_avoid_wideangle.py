@@ -74,12 +74,18 @@ while True:
     blob_red, blob_green = {},{};
     area_red, area_green = 0, 0
     ok_blue,ok_orange = False, False
+    blue_center_y, orange_center_y = 0,0
     red , green = 0, 0
     sign_flag = 0
     wall_right, wall_left = False, False
-    blob_red, blob_green,ok_blue,ok_orange, frame, mask_red, mask_green, cliped_frame,wall_right, wall_left = color_tracking.detect_sign_area(threshold, cap)
+    black_right_raito, black_left_raito = 0,0
+    blob_red, blob_green,ok_blue,ok_orange,blue_center_y,orange_center_y, frame, mask_red, mask_green, cliped_frame,black_right_raito,black_left_raito = color_tracking.detect_sign_area(threshold, cap)
 
-
+    if black_right_raito > 0.7:
+        wall_right = True
+    elif black_left_raito > 0.7:
+        wall_left = True
+    print("black_left,blue_center_y",black_left_raito,blue_center_y)
     area_red = blob_red["area"]
     area_green = blob_green["area"]
 
@@ -129,13 +135,44 @@ while True:
                 distance = red_raito/max_area
                 wide = (center_red_x/width)-0.5 + 0.2
 
+                center_raito_red = (center_red_x/width)
+
                 #if red_raito < 0.006:
                 #    wide = wide - 0.1
-
+                #print("center_raito_red,red_raito",center_raito_red,red_raito)
                 if wide > 1:
                     wide = 1
-
-
+                """
+                if center_raito_red > 0.2:
+                    if red_raito > 0.02:
+                        steer = 120
+                    elif red_raito > 0.015:
+                        steer = 70
+                    elif red_raito > 0.01:
+                        steer = 50
+                    elif red_raito > 0.001:
+                        steer = 30
+                    else:
+                        steer = 20
+                    if center_raito_red > 0.8:
+                        steer = steer * 1.5
+                    elif center_raito_red> 0.6:
+                        steer = steer * 1.2
+                    else:
+                        steer = steer * 0.8
+                elif center_raito_red <= 0.2:
+                    if red_raito > 0.02:
+                        steer = 50
+                    elif red_raito > 0.01:
+                        steer = -10
+                    else:
+                        steer = 0
+                if center_raito_red > 0.3 and (rotation_mode == "orange" or rotation_mode == ""):
+                    if red_raito < 0.018 and black_right_raito > 0.6:
+                        #sign_flag = 3
+                        steer = -80
+                        speed = 30
+                """
                 steer = (15 * 4 ) / max_area * (90-(np.arccos(wide * distance) * 180 )/ np.pi)
 
                 #print("before_steer,center_red_x/width : ",steer,center_red_x/width)
@@ -193,12 +230,46 @@ while True:
                         sign_flag = 1
                 wide = (center_green_x/width)-0.5 - 0.2
 
+                center_raito_green = (center_green_x/width)
+                print("green_raito:",green_raito)
+                """if center_raito_green < 0.8:
+                    if green_raito > 0.02:
+                        steer = -120
+                    elif green_raito > 0.015:
+                        steer = -70
+                    elif green_raito > 0.01:
+                        steer = -50
+                    elif green_raito > 0.001:
+                        steer = -30
+                    else:
+                        steer = -20
+                    if center_raito_green < 0.2:
+                        steer = steer * 1.5
+                    elif center_raito_green < 0.4:
+                        steer = steer * 1.2
+                    else:
+                        steer = steer * 0.8
+                elif center_raito_green >= 0.8:
+                    if green_raito > 0.02:
+                        steer = -50
+                    elif green_raito > 0.018:
+                        steer = 0
+                    else:
+                        steer = 10
+
                 #if green_raito < 0.006:
                     #wide = wide + 0.1
+                if center_raito_green < 0.7 and (rotation_mode == "blue" or rotation_mode == ""):
+                    if green_raito < 0.018 and black_left_raito > 0.5:
+                        #sign_flag =3
+                        speed = 30
+                        steer = 80
+
 
                 if wide  < -1:
                     wide = -1
 
+                """
                 steer = 15 * 4 / max_area * (90-(np.arccos(wide * distance) * 180 )/ np.pi)
                 if green_raito < 0.003:
                     steer = steer * 0.5
@@ -251,8 +322,20 @@ while True:
                 if int(steer) == 0:
                     steer = -1
 
-
-
+    if wall_right:
+        if rotation_mode == "blue":
+            sign_flag = 1
+            steer = -80
+        else:
+            sign_flag = 2
+            steer = -80
+    elif wall_left:
+        if rotation_mode == "blue":
+            sign_flag = 2
+            steer = 80
+        else:
+            sign_flag = 1
+            steer = 80
     if ok_blue and rotation_mode == "blue":# 青色認識
         rmode = 1
     elif ok_orange and rotation_mode == "orange":#オレンジ認識
