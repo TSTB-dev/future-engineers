@@ -161,19 +161,11 @@ if True:
             straight_flag = False
             print("yow,difference",yow,motor.get()[0] - gyro.straight_rotation)
             if sign_flag == 4:
-                if yow > 0:
-                    steer = steer * (-1)
-                if abs(yow) < 90:
-                    #throttle = throttle - 20
-                    if yow == 0:
-                        steer = steer  / 8
-                    elif yow >=-9 and yow < 0:
-                        steer = 80
-                    elif yow > 0 and yow <= 9:
-                        steer = -80
-                    else:
-                        steer = -(yow * 9)
-                    pass
+                if abs(yow) > 70:
+                    if yow > 0:
+                        steer = -100
+                    elif yow < 0:
+                        steer = 100
             elif sign_flag == 5:
                 throttle = throttle + 10
                 if yow < 0:

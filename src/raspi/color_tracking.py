@@ -44,7 +44,7 @@ def green_detect(img):
 
     # 緑色のHSVの値域
 
-    hsv_min = np.array([65,140,40])
+    hsv_min = np.array([65,140,35])
     hsv_max = np.array([90,255,255])
 
     #hsv_min = np.array([30,100,30])
@@ -73,7 +73,7 @@ def blue_detect(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
     #buleHSVの値域
-    hsv_min = np.array([90,68,60])
+    hsv_min = np.array([90,68,80])
     hsv_max = np.array([120,255,255])
     mask1 = cv2.inRange(hsv, hsv_min, hsv_max)
 
@@ -229,8 +229,8 @@ def detect_sign_area(cap, mode=""):#標識の面積を返すdetect_sign（面積
 
     frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     #frame_hsv[:, :, (0)] = frame_hsv[:, :, (0)]
-    #frame_hsv[:, :, (1)] = np.clip(frame_hsv[:, :, (1)]*1.5,0,255)
-    frame_hsv[:, :, (2)] = np.clip(frame_hsv[:, :, (2)]*1.5,0,255)
+    frame_hsv[:, :, (1)] = np.clip(frame_hsv[:, :, (1)]*1.5,0,255)
+    #frame_hsv[:, :, (2)] = np.clip(frame_hsv[:, :, (2)]*1.5,0,255)
     frame = cv2.cvtColor(frame_hsv, cv2.COLOR_HSV2BGR)
     #frame[:,:,(1)] = np.clip(frame[:,:,(1)] * 1.5,0,255)
     """
