@@ -1,108 +1,105 @@
-Engineering materials [石川高専B]
+Engineering materials [Ishikawa National College of Technology B].
 ====
-このリポジトリには，WRO Future Engineers2022に参加する際の資料が含まれています．
+This repository contains materials for participating in WRO Future Engineers2022.
 
-## チームメンバー
+## Team members.
 ***
-宇野伸一
-萬年俊行
-坂井俊介（コーチ）
+Shinichi Uno
+Toshiyuki Mannen
+Shunsuke Sakai (Coach)
 
-## 内容
+## Contents
 ***
-* `t-photos` チームメンバーの写真
-* `v-photos` 車体を左右，前後，上下から撮影した画像
-* `video` 試走した際のデモンストレーション動画へのYouTubeリンクです．
-* `schemes` どのような電気機械的な構成要素が使われていて，それらがどのように接続されているかの図と説明
-* `src` 車体を制御するためのソースコード
+* `t-photos` Pictures of team members
+* `v-photos` Images of the car body taken from left, right, front and back, and up and down.
+* `video` YouTube link to the demonstration video of the trial run.
+* `schemes` Diagrams and descriptions of what electromechanical components are used and how they are connected.
+* `src` source code to control the vehicle
 
-# ソースコードの解説
+# `src` Source code description.
 ***
-`src`ディレクトリには, `raspi`と`spike`の２つのサブディレクトリがあります．`raspi`にはRaspberryPiで動かすプログラムが，`spike`にはSPIKE Hub上で実行するプログラムが含まれています．
+In the `src` directory, there are two subdirectories, `raspi` and `spike`. The `raspi` directory contains programs to run on the RaspberryPi, and the `spike` directory contains programs to run on the SPIKE Hub.
 
-どちらのフォルダにも大量のpythonファイルが入っていますが、
+Both folders contain a large number of python files, but
 
-競技開始時に実行するのは`raspi`フォルダ内の`color_avoid_wideangle.py`と`spike`フォルダ内の`main.py`のみです
-他のファイルは調整用のプログラムやメインのプログラムからモジュールとしてインポートしています．
+Only `color_avoid_wideangle.py` in the `raspi` folder and `main.py` in the `spike` folder are executed at the start of the competition
+Other files are imported as modules from the tuning program and the main program.
 
-## RaspberryPi上で実行するプログラム
+## Program to run on RaspberryPi.
 ***
-RasbperryPi上では，広角カメラから画像を取得し，標識や壁を検出して操作量を算出します．
+On RasbperryPi, it acquires images from a wide-angle camera, detects signs and walls, and calculates the amount of operation.
 
-`color_avoid_wideangle.py`
+`color_avoid_wideangle.py`.
 
-競技時はこのプログラムを実行します．後述する`color_tracking.py`内の`detect_sign_area()`を実行し、標識・壁・地面のラインの情報を取得します。
-その後、それらの情報を用いて、車体のステアリングモータと駆動モータに与える数値を算出し、
-シリアル通信でHubに送信します。
+During competition, this program is executed. It executes `detect_sign_area()` in `color_tracking.py` described below to obtain information on signs, walls, and ground lines.
+Then, using those information, it calculates the values given to the steering motor and drive motor of the vehicle body, and
+Sends them to the Hub via serial communication.
 
-`color_tracking.py`
+`color_tracking.py`.
 
-このモジュール内には，次のように画像情報から標識や壁などを認識するための関数が含まれています．
+This module includes the following functions to recognize signs, walls, etc. from image information.
 
 * `red_detect()`
 
-この関数は、カメラによって取得した画像の中で、赤色の部分だけを検出し二値化を行います。
-また、この関数と同様の働きをする関数が、緑色、青色、オレンジ色、黒色についても存在します。
+This function detects and binarizes only the red portion of the image acquired by the camera.
+There are also functions that work in the same way for green, blue, orange, and black.
 * `analysis_blob_line()`, `analysis_blob()`
 
-この関数は、二値化された画像について、連結オブジェクトを検出し、 そのオブジェクトの中で面積が最大のオブジェクトについての情報を返します。引数には二値化された画像を取ります。
+This function finds connected objects in a binarized image and returns information about the object with the largest area among the objects. It takes a binarized image as argument.
 * `detect_sign_area()`
 
-この関数は、引数にカメラ画像を取ります。
-その画像と、`analysis_blob_line()`,　`analysis_blob()`,　各色のdetect関数を用いて、 コース上のオブジェクトの詳しい情報を得ます。
+This function takes a camera image as its argument.
+Using that image and `analysis_blob_line()`, `analysis_blob()`, and the respective color detect functions, detailed information about the objects on the course is obtained.
 
-
-## SPIKE Hub上で実行するプログラム
+## Programs to run on the SPIKE Hub
 ***
 
 `main.py`
 
-競技時にHub上で実行するプログラムです．後述するモータ制御用のモジュールをインポートし，RaspberryPiから送られてきた外界の情報をもとに競技時の車体を制御します．
-Hubの起動時に自動的に実行され，Hubのホームボタンが押されるのを待機します．ホームボタンが押された時，走行を開始してRaspberryPiとシリアル通信しながら走行を制御します．
+This program is executed on the Hub during the competition. It imports the module for motor control described below, and controls the car body during the competition based on the external information sent from the RaspberryPi.
+It is automatically executed when the Hub is started, and waits for the Home button of the Hub to be pressed. When the home button is pressed, it starts running and controls the vehicle while communicating serially with RaspberryPi.
 
 
-### モータ制御用のモジュール
+### Module for motor control
 `basic_motion.py`
 
-BasicMotionは車体の基本的な動作を制御するためのクラスです．
-
-`move()`関数は引数1に駆動モータのスピード(throttle)、 引数２にステアリングモータの回転角度(steer)を要求し、引数の値をもとに2つのモータを動かします
-
+BasicMotion is a class for controlling basic body motions.
+The `move()` function takes a speed of the drive motor (throttle) as argument 1 and a rotation angle of the steering motor (steer) as argument 2, and moves the two motors based on the argument values.
 <br>
 
 `gyro.py`
 
-Gyroは車体の角度を調整する動作に必要なクラスです。
+Gyro is a class required for the operation of adjusting the angle of the car body.
 
-`straightening()`関数は車体を基準角度になるようにP制御する関数です。
-引数１で駆動モータのスピード(throttle)を要求し、そのスピードで走行します
+The `straightening()` function controls the car body to be at a reference angle.
+It requests the speed (throttle) of the drive motor in argument 1 and runs at that speed
 
-`change_steer()`関数は車が進むべき方向（基準角度）を変更する関数です。
-引数１で駆動モータのスピード(throttle)、引数２で車体の旋回方向(rot)を要求します。（引数3は基本的に使いません）
-車体が青線かオレンジ線を認識した際にstraightening()で使う基準角度を変更します。
+The `change_steer()` function changes the direction in which the car should go (reference angle).
+It requests the speed of the drive motor (throttle) as argument 1 and the turning direction of the car body (rot) as argument 2. (Argument 3 is basically not used.)
+Change the reference angle to be used in straightening() when the vehicle recognizes the blue or orange line.
 
-`back_turn()`関数は車体の基準角度を変更した後バックしながら車体を旋回させる関数です。
-引数１で駆動モータのスピード(throttle)、引数2で車体の旋回方向(rot)を要求します、引数3は車体の直進量(go_distance)を指定します。
-車体が青線かオレンジ線を認識した際にgo_distance分だけ車体を直進させた後基準角度を変更します。
+The `back_turn()` function turns the car backward after changing the reference angle of the car body.
+Argument 1 requests the speed of the drive motor (throttle), argument 2 requests the turning direction of the body (rot), and argument 3 specifies the amount of straight-line movement of the body (go_distance).
+When the vehicle recognizes the blue or orange line, the reference angle is changed after the vehicle body moves straight ahead by the amount of go_distance.
 
-# SPIKE Hubへのプログラム書き込みと実行
+# Writing and executing programs to SPIKE Hub
 ***
 
-### Muエディタの起動
+### Launching the Mu Editor
     
-ラズパイ上でLinuxターミナルを開き，次のコマンドを実行します．
+Open a Linux terminal on Raspi and execute the following command.
 
 `pi@raspberry: ~$ source ~/mu-venv/bin/activate`<br>
 `pi@raspberry: ~$ mu-editor`
 
-### 記述言語の変更
-RaspberryPiで実行するプログラムはPythonで記述しますが，Hub上で実行するプログラムはMicroPythonで記述します．Muエディタは次のボタンで記述する言語のモードを切り替えます．
+### Change of description language
+The program to be executed on the RaspberryPi is written in Python, while the program to be executed on the Hub is written in MicroPython．
 <img src="./other/mu_mode.png" width="100%">
 
-### プログラムのアップロード
-RaspberryPiからSPIKEにファイルをアップロードしたい場合は，次のボタンをクリックしてHub上のファイルシステムにアクセスし，アップロードしたいファイルをドラッグ&ドロップします．
+### Upload Program
+If you want to upload files from RaspberryPi to SPIKE, click the following button to access the file system on the Hub and drag and drop the files you want to upload.
 <img src="./other/mu_upload.png" width="100%">
 
-試走時は，Muエディタの実行ボタンをクリックすれば，Hub上でそのプログラムを動かせます．しかし，競技時はHubのボタンを押すことで走行を開始する必要があります．Hubは起動時にmain.pyという名前のPythonファイルを実行するので，競技時に使うプログラムはmain.pyという名前でアップロードしておきます
+During a trial run, the program can be run on the Hub by clicking the Run button on the Mu Editor. However, during a competition, you need to click a button on the Hub to start the run, and since the Hub runs a Python file named main.py when it starts up, you should upload the program to be used during the competition with the name main.py.
 
 
