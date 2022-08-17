@@ -425,7 +425,7 @@ while True:
             sign_flag = 6
             rmode = 1
             steer = 50
-        if (black_left_raito > 0.2 or (sign_flag == 2 and center_green_x/width > 0.7 and green_raito < 0.012))and blue_center_y < 1:
+        if (black_left_raito > 0.1 or (sign_flag == 2 and center_green_x/width > 0.7 and green_raito < 0.012))and blue_center_y < 1:
             rmode = 1
             sign_flag = 6
             steer = 120
@@ -446,7 +446,7 @@ while True:
             sign_flag = 6
             rmode = 2
             steer = -50
-        if (black_right_raito > 0.2 or (sign_flag == 1 and center_red_x/width < 0.4 and red_raito < 0.012)) and orange_center_y < 1:
+        if (black_right_raito > 0.1 or (sign_flag == 1 and center_red_x/width < 0.4 and red_raito < 0.012)) and orange_center_y < 1:
             rmode = 2
             sign_flag = 6
             steer = -120

@@ -9,13 +9,13 @@ def red_detect(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
     # 赤色のHSVの値域1
-    hsv_min = np.array([0,70,20])
+    hsv_min = np.array([0,70,25])
     hsv_max = np.array([0,255,255])
     mask1 = cv2.inRange(hsv, hsv_min, hsv_max)
 
     # 赤色のHSVの値域2
 
-    hsv_min = np.array([150,70,20])
+    hsv_min = np.array([150,70,25])
     hsv_max = np.array([180,255,255])
     mask2 = cv2.inRange(hsv, hsv_min, hsv_max)
     return mask1 + mask2
@@ -27,7 +27,7 @@ def black_detect(img):
 
     # 黒色のHSVの値域
     hsv_min = np.array([0,0,0])
-    hsv_max = np.array([180,255,140])
+    hsv_max = np.array([180,255,80])
     mask1 = cv2.inRange(hsv, hsv_min, hsv_max)
 
     return mask1
@@ -310,16 +310,16 @@ def detect_sign_area(cap, mode=""):#標識の面積を返すdetect_sign（面積
     black_core_raito = black_core_area * ((5/2) * (5/3))/(width * height)
 
 
-    if black_left_raito < black_left_middle_raito and black_left_middle_raito > 0.85:
+    if black_left_raito < black_left_middle_raito and black_left_middle_raito > 0.9:
         black_left_raito = black_left_middle_raito
-    if black_right_raito < black_right_middle_raito and black_right_middle_raito > 0.85:
+    if black_right_raito < black_right_middle_raito and black_right_middle_raito > 0.9:
         black_right_raito = black_right_middle_raito
 
     #print("right_raito,left_raito:",black_right_raito,black_left_raito)
     wall_right,wall_left = False,False
-    if black_right_raito > 0.65:
+    if black_right_raito > 0.68:
         wall_right = True
-    elif black_left_raito > 0.65:
+    elif black_left_raito > 0.68:
         wall_left = True
     if not wall_right and not wall_left:
         if black_core_raito > 0.6:

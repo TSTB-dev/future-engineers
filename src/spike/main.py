@@ -206,7 +206,10 @@ if True:
                     if yow > 85:
                         throttle = throttle + 25
                         steer = steer - 10
+                    else:
+                        throttle = throttle + 10
                     steer = steer + 20
+
                     #if steer < 10:
                         #steer = 10
                     #throttle = throttle + 20
@@ -243,7 +246,8 @@ if True:
                     if yow > -85:
                         throttle = throttle + 25
                         steer = steer + 10
-
+                    else:
+                        throttle = throttle + 10
                     steer = steer - 20
                     #if steer >= -10:
                         #steer = -10

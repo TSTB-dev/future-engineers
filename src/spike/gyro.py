@@ -65,7 +65,8 @@ class Gyro(Basic_motion):
                 print("-------\n")
                 print("blue get")
 
-                hub.motion.yaw_pitch_roll(90+(hub.motion.yaw_pitch_roll()[0]))
+                y=hub.motion.yaw_pitch_roll()[0]
+                hub.motion.yaw_pitch_roll(89+y)
                 self.destination=0
                 self.direction=-1
                 self.straight_rotation=self.motor.get()[0]
@@ -83,7 +84,9 @@ class Gyro(Basic_motion):
                 print("-------\n")
                 print("orange get")
 
-                hub.motion.yaw_pitch_roll(-90+(hub.motion.yaw_pitch_roll()[0]))
+                y=hub.motion.yaw_pitch_roll()[0]
+                hub.motion.yaw_pitch_roll(-89+y)
+
                 self.destination=0
                 self.direction=1
                 self.straight_rotation=self.motor.get()[0]
@@ -169,7 +172,8 @@ class Gyro(Basic_motion):
                     if(end-start)/1000 >= 3000:
                         break
 
-                hub.motion.yaw_pitch_roll(90+(hub.motion.yaw_pitch_roll()[0]))
+                y=hub.motion.yaw_pitch_roll()[0]
+                hub.motion.yaw_pitch_roll(89+y)
                 start=time.ticks_us()
 
                 while hub.motion.yaw_pitch_roll()[0]>=15:
@@ -208,7 +212,8 @@ class Gyro(Basic_motion):
                     if(end-start)/1000 >= 3000:
                         break
 
-                hub.motion.yaw_pitch_roll(-90+(hub.motion.yaw_pitch_roll()[0]))
+                y=hub.motion.yaw_pitch_roll()[0]
+                hub.motion.yaw_pitch_roll(-89+y)
 
                 start=time.ticks_us()
 
