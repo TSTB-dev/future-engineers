@@ -97,11 +97,11 @@ Gyroは車体の角度を調整する動作に必要なクラスです。
 
 ### 記述言語の変更
 RaspberryPiで実行するプログラムはPythonで記述しますが，Hub上で実行するプログラムはMicroPythonで記述します．Muエディタは次のボタンで記述する言語のモードを切り替えます．
-<img src="../images/mu_mode.png" width="100%">
+<img src="./other/mu_mode.png" width="100%">
 
 ### プログラムのアップロード
 RaspberryPiからSPIKEにファイルをアップロードしたい場合は，次のボタンをクリックしてHub上のファイルシステムにアクセスし，アップロードしたいファイルをドラッグ&ドロップします．
-<img src="../images/mu_upload.png" width="100%">
+<img src="./other/mu_upload.png" width="100%">
 
 試走時は，Muエディタの実行ボタンをクリックすれば，Hub上でそのプログラムを動かせます．しかし，競技時はHubのボタンを押すことで走行を開始する必要があります．Hubは起動時にmain.pyという名前のPythonファイルを実行するので，競技時に使うプログラムはmain.pyという名前でアップロードしておきます
 
