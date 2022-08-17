@@ -12,7 +12,7 @@ throttle = 20
 
 data_dir = "/home/pi/WRO2022/data"
 save_dir = os.path.join(data_dir, "train")
-SAVE_FPS = 1
+SAVE_FPS = 0.5
 
 def avoid_object(detect_red, detect_green):
     if detect_red:
@@ -55,7 +55,7 @@ red = 0
 count = 0
 _id = 0
 #mode = "get_img"
-mode = ""
+mode = "get_img"
 frame_rate = 10
 size = (640, 480)
 fmt = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
@@ -79,13 +79,20 @@ while True:
     sign_flag = 0
     wall_right, wall_left = False, False
     black_right_raito, black_left_raito = 0,0
-    blob_red, blob_green,ok_blue,ok_orange,blue_center_y,orange_center_y, frame, mask_red, mask_green, cliped_frame,black_right_raito,black_left_raito = color_tracking.detect_sign_area(threshold, cap)
-
-    if black_right_raito > 0.7:
+    blob_red, blob_green,ok_blue,ok_orange,blue_center_y,orange_center_y, frame, frame_, mask_red, mask_green,black_right_raito,black_left_raito,blue_center_x,orange_center_x = color_tracking.detect_sign_area(cap)
+    if black_right_raito > 0.8 and black_left_raito > 0.8:
         wall_right = True
-    elif black_left_raito > 0.7:
         wall_left = True
-    print("black_left,blue_center_y",black_left_raito,blue_center_y)
+    elif black_right_raito > 0.7 and black_left_raito > 0.7:
+        if black_right_raito > black_left_raito:
+            wall_right = True
+        else:
+            wall_left = True
+    else:
+        if black_right_raito > 0.7:
+            wall_right = True
+        elif black_left_raito > 0.7:
+            wall_left = True
     area_red = blob_red["area"]
     area_green = blob_green["area"]
 
@@ -106,16 +113,20 @@ while True:
     #print("red_raito",red_raito)
 
     if mode == "get_img" and elapsed_time > 1/SAVE_FPS:
-        id_path = "{:06}.png".format(_id)
+        id_path = "{:06}.jpg".format(_id)
         frame_path = os.path.join(save_dir, id_path)
-        cv2.imwrite(frame_path, frame)
+        cv2.imwrite(frame_path, frame_)
         _id += 1
         elapsed_time = 0
-
     if rotation_mode == "":# 周回の向き決定
-        if ok_blue:
+        if ok_blue and ok_orange:
+            if orange_center_y > blue_center_y:
+                rotation_mode = "orange"
+            else:
+                rotation_mode = "blue"
+        elif ok_blue:
             rotation_mode = "blue"
-        if ok_orange:
+        elif ok_orange:
             rotation_mode = "orange"
 
     steer = 0
@@ -123,15 +134,18 @@ while True:
     speed = 50
     rmode = 0
     #print("red_raito,green_raito:",red_raito,green_raito)
+    print("s:",green_raito)
+    force_sign = -1
     if red_raito >= 0.0025 or green_raito >= 0.0025:#標識認識によるsteer値の決定
         center_frame = width/2
+
         if red_raito > green_raito:
             if red_raito < 0.4: #tracking past:0.02
                 sign_flag = 1
-                if rotation_mode == "orange" and center_red_x/width < 0.1:
-                    sign_flag = 0
-                    if green_raito > 0.001:
-                        sign_flag = 2
+                print(center_green_x/width)
+                if rotation_mode == "orange" and ok_orange and green_raito > 0.002 and center_green_x/width >= 0 and center_green_x/width <= 0.9:
+                    force_sign = 2
+
                 distance = red_raito/max_area
                 wide = (center_red_x/width)-0.5 + 0.2
 
@@ -173,13 +187,16 @@ while True:
                         steer = -80
                         speed = 30
                 """
-                steer = (15 * 4 ) / max_area * (90-(np.arccos(wide * distance) * 180 )/ np.pi)
+                steer = (20 * 4 ) / max_area * (90-(np.arccos(wide * distance) * 180 )/ np.pi)
 
                 #print("before_steer,center_red_x/width : ",steer,center_red_x/width)
                 #避ける方向と逆方向に曲がる必要がある時は緩和する
                 #0でもよさそう
-                if red_raito < 0.003:
-                    steer = steer * 0.5
+
+                #if red_raito < 0.003:
+                 #   steer = steer * 0.5
+
+                """
                 if steer < 0:
                     if center_red_x/width < 0.2:
                         steer = 0
@@ -197,18 +214,59 @@ while True:
                         steer = steer * 1.6
                     elif red_raito > 0.006:
                         steer = steer * 1.6
-                    if center_red_x/width < 0.2:
+                    if center_red_x/width < 0.4:
+                        steer = steer * 1.5
+                    elif center_red_x/width < 0.2:
                         steer = steer * 1.3
+                """
 
+                if center_raito_red < 0.15:
+
+                    if red_raito > 0.05:
+                        steer = (red_raito / 0.05) * 110
+                    elif red_raito > 0.008:
+                        #speed = 70
+                        steer = 0
+                    elif red_raito > 0.004:
+                        #speed = 70
+                        steer = steer * 1
+                    else:
+                        sign_flag = 3
+                elif center_raito_red < 0.5:
+
+                    if red_raito > 0.015:
+                        steer = (red_raito / 0.015) * 55
+
+                    elif red_raito > 0.008:
+                        steer = (red_raito / 0.008) * 45
+                elif center_raito_red < 0.8:
+                    if red_raito > 0.015:
+                        steer = (red_raito/0.015) * 90
+                    if steer < 0 and red_raito > 0.01:
+                        steer = 0
+                    elif red_raito > 0.006:
+                        steer = steer * 2
+                    #elif red_raito > 0.005:
+                        #steer = 0
+                else:
+                    if red_raito > 0.01:
+                        steer = steer * 3
+                    else:
+                        steer = steer * 2.5
                 #if red_raito > 0.017 and steer < 0 and center_red_x/width > 0.2:
                     #steer = 50
 
                 #if red_raito > 0.017 and steer >= 1 and steer < 30:
                     #steer = steer * 2
-                if wall_right:
-                    steer = -80
-                elif wall_left:
-                    steer = 80
+                if black_right_raito > 0.15 and (rotation_mode == "orange"):
+                    if red_raito < 0.03 and orange_center_y > 0.6 and orange_center_y < 0.8:
+                        steer = -50
+                        #steer = -80
+                        speed = 50
+                    elif red_raito < 0.03 and orange_center_y >= 0.8 and orange_center_y < 1:
+                        steer = -50
+                        speed = 50
+
                 if red_raito > 0.15: #avoid
                     #steer =  1700 * (red_raito** 1.3)
                     steer = 120
@@ -221,17 +279,16 @@ while True:
 
         else:
             if green_raito < 0.4: #tracking past:0.02
-                sign_flag = 2
+                force_sign = 2
                 distance = green_raito/max_area
                 #print("center_green_x/width:",center_green_x/width)
-                if rotation_mode == "blue" and center_green_x/width > 0.9:
+                if rotation_mode == "blue" and ok_blue and center_red_x/width <= 1 and  center_red_x/width > 0.1 and red_raito > 0.002:
                     sign_flag = 0
                     if red_raito > 0.001:
                         sign_flag = 1
                 wide = (center_green_x/width)-0.5 - 0.2
 
                 center_raito_green = (center_green_x/width)
-                print("green_raito:",green_raito)
                 """if center_raito_green < 0.8:
                     if green_raito > 0.02:
                         steer = -120
@@ -265,16 +322,17 @@ while True:
                         speed = 30
                         steer = 80
 
-
+                """
                 if wide  < -1:
                     wide = -1
 
-                """
-                steer = 15 * 4 / max_area * (90-(np.arccos(wide * distance) * 180 )/ np.pi)
-                if green_raito < 0.003:
-                    steer = steer * 0.5
+
+                steer = 20 * 4 / max_area * (90-(np.arccos(wide * distance) * 180 )/ np.pi)
+                #if green_raito < 0.003:
+                 #   steer = steer * 0.5
                 #避ける方向と逆方向に曲がる必要がある時は緩和する
                 #0でもよさそう
+                """
                 if steer > 0:
                     if center_green_x/width > 0.8:
                         steer = 0
@@ -294,6 +352,39 @@ while True:
                         steer = steer * 1.6
                     if center_green_x/width > 0.8:
                         steer = steer * 1.3
+                """
+
+                if center_raito_green > 0.85:
+
+                    if green_raito > 0.05:
+                        steer = -(green_raito / 0.05) * 110
+                    elif green_raito > 0.008:
+                        #speed = 70
+
+                        steer = 0
+                    elif green_raito > 0.004:
+                        #speed = 70
+                        steer = steer * 1
+                    else:
+                        sign_flag = 3
+                elif center_raito_green > 0.6:
+                    if green_raito > 0.015:
+                        steer = -(green_raito / 0.02) * 55
+                    elif green_raito > 0.008:
+                        steer = -(green_raito / 0.008) * 45
+                elif center_raito_green > 0.2:
+                    if green_raito > 0.015:
+                        steer = -(green_raito/0.015) * 70
+                    if steer > 0 and green_raito > 0.01:
+                        steer = 0
+                    elif green_raito > 0.006:
+                        steer = steer * 2
+                else:
+                    if green_raito > 0.01:
+                        steer = steer * 3
+                    else:
+                        steer = steer * 2.5
+
 
                 #近づきすぎた時の緊急回避（あんまり機能してない）
 
@@ -308,10 +399,18 @@ while True:
                     #steer = steer * 2
                 #if green_raito > 0.017 and steer >=1 and steer <=20:
                     #steer = steer * 2
-                if wall_right:
-                    steer = -80
-                elif wall_left:
-                    steer = 80
+
+                if black_left_raito > 0.15 and (rotation_mode == "blue"):
+                    if green_raito < 0.03 and blue_center_y > 0.6 and blue_center_y < 0.8:
+                        steer = 50
+                        speed = 50
+                        #steer = 80
+                    elif green_raito < 0.03 and blue_center_y >= 0.8 and blue_center_y < 1:
+                        steer = 50
+                        speed = 50
+
+
+
 
                 if green_raito > 0.15: #avoid
                     #steer = -( 1700 * (green_raito ** 1.3))
@@ -321,25 +420,75 @@ while True:
 
                 if int(steer) == 0:
                     steer = -1
+    if ok_blue and rotation_mode == "blue":# 青色認識
+        if blue_center_y < 0.75 and sign_flag == 2 and center_green_x/width < 0.7 and green_raito < 0.012:
+            sign_flag = 6
+            rmode = 1
+            steer = 50
+        if (black_left_raito > 0.2 or (sign_flag == 2 and center_green_x/width > 0.7 and green_raito < 0.012))and blue_center_y < 1:
+            rmode = 1
+            sign_flag = 6
+            steer = 120
+            #steer = 0
+            speed = speed - 20
+        elif (sign_flag == 2 and center_green_x/width <= 0.65):
+            """rmode = 1
+            sign_flag = 6
+            steer = steer + 50
+            """
 
+            rmode = 1
+
+        else:
+            rmode = 1
+    elif ok_orange and rotation_mode == "orange":#オレンジ認識
+        if orange_center_y < 0.75 and sign_flag == 1 and center_red_x/width > 0.3 and red_raito < 0.012:
+            sign_flag = 6
+            rmode = 2
+            steer = -50
+        if (black_right_raito > 0.2 or (sign_flag == 1 and center_red_x/width < 0.4 and red_raito < 0.012)) and orange_center_y < 1:
+            rmode = 2
+            sign_flag = 6
+            steer = -120
+            #steer = 0
+            speed = speed - 20
+        elif sign_flag == 1 and center_red_x/width >= 0.35:
+            """ rmode = 2
+            sign_flag = 6
+            steer = steer - 50"""
+            rmode = 2
+        else:
+            rmode = 2
+    #spikeで正負の処理を行う
     if wall_right:
         if rotation_mode == "blue":
-            sign_flag = 1
-            steer = -80
+            if sign_flag != 1:
+                sign_flag = 4
+                steer = 120
+                speed = 50
         else:
-            sign_flag = 2
-            steer = -80
+            if sign_flag != 2:
+                sign_flag = 4
+                steer = 120
+                speed = 50
     elif wall_left:
         if rotation_mode == "blue":
-            sign_flag = 2
-            steer = 80
+            if (sign_flag != 1):
+                sign_flag = 4
+                steer = 120
+                speed = 50
         else:
-            sign_flag = 1
-            steer = 80
-    if ok_blue and rotation_mode == "blue":# 青色認識
-        rmode = 1
-    elif ok_orange and rotation_mode == "orange":#オレンジ認識
-        rmode = 2
+            if (sign_flag != 2):
+                sign_flag = 4
+                steer = 120
+                speed = 50
+    if wall_right and wall_left:
+        sign_flag = 5
+
+
+    if sign_flag == 0:
+        speed = 50
+
 
     steer_int = int(steer)
     if steer_int > 120:
@@ -347,7 +496,23 @@ while True:
     elif steer_int < -120:
         steer_int = -120
 
-    cmd = "{:4d},{:3d},{},{}@".format(steer_int, speed,sign_flag,rmode)
+    side_flag = 0
+
+    if rotation_mode =="blue" and rmode==1:
+        if(orange_center_y >= 0.65):
+            side_flag=0
+        else:
+            side_flag=1
+
+    elif rotation_mode=="orange" and rmode==2:
+        if(blue_center_y >= 0.65):
+            side_flag=0
+        else:
+            side_flag=1
+
+    if force_sign != -1:
+        sign_flag = force_sign
+    cmd = "{:4d},{:3d},{},{},{}@".format(steer_int, speed,sign_flag,rmode,side_flag)
     print("write: {}".format(cmd))
     ser.write(cmd.encode("utf-8"))
 
