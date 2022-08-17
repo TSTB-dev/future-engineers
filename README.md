@@ -1,4 +1,4 @@
-Engineering materials [Ishikawa National College of Technology B].
+Engineering materials [石川高専B]
 ====
 This repository contains materials for participating in WRO Future Engineers2022.
 
