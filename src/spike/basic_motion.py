@@ -22,7 +22,7 @@ class Basic_motion:
             elif once:
                 break
             else:
-                self.motor_steer.run_to_position(steer,100)
+                self.motor_steer.run_to_position(steer)
                 once = True
 
     def stop(self):

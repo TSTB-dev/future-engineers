@@ -18,6 +18,7 @@ class Gyro(Basic_motion):
 
         self.section_count = -1
         self.sign_count = 0
+        self.turn=87
         #self.memory_sign = [[0,0],[0,0],[0,0],[0,0]]
 
 
@@ -29,9 +30,9 @@ class Gyro(Basic_motion):
         repair_yaw=hub.motion.yaw_pitch_roll()[0]
 
         if abs(repair_yaw)<=30:
-            self.difference_steer = int(-3 * (repair_yaw + bias))
+            self.difference_steer = int(-4 * (repair_yaw + bias))
         else:
-            self.difference_steer = int(-5 * (repair_yaw + bias))
+            self.difference_steer = int(-4 * (repair_yaw + bias))
 
         if self.difference_steer < -120:
             self.difference_steer = -120
@@ -44,29 +45,31 @@ class Gyro(Basic_motion):
         return 0
 
 
-    def change_steer(self,throttle,rot,go_angle):
+    def change_steer(self,throttle,rot,go_angle,steer):
         check_line=False
         blue_camera = (rot == 1)
         orange_camera = (rot == 2)
         xx=self.motor.get()[0]
 
         #terms_light_sensor = (h >  210-130) and ( h < 210+130) and(s > 256) and (s < 1024) and(v >= 0) and (v <= 1023)
-        if xx-self.straight_rotation>=2200:
+        if xx-self.straight_rotation>=2100:
 
             if blue_camera:
                 self.section_count = self.section_count + 1
                 rel_pos= self.motor.get()[0]
                 this_angle=rel_pos
 
-                while (this_angle-rel_pos)<=go_angle-10:
+                while (this_angle-rel_pos)<go_angle:
                     self.straightening(throttle,0)
                     this_angle = self.motor.get()[0]
 
                 print("-------\n")
                 print("blue get")
+                rel_pos= self.motor.get()[0]
+
 
                 y=hub.motion.yaw_pitch_roll()[0]
-                hub.motion.yaw_pitch_roll(89+y)
+                hub.motion.yaw_pitch_roll(self.turn+y)
                 self.destination=0
                 self.direction=-1
                 self.straight_rotation=self.motor.get()[0]
@@ -77,15 +80,17 @@ class Gyro(Basic_motion):
                 self.section_count = self.section_count + 1
                 rel_pos= self.motor.get()[0]
                 this_angle=rel_pos
-                while (this_angle-rel_pos)<=go_angle-10:
+                while (this_angle-rel_pos)<go_angle:
                     self.straightening(throttle,0)
                     this_angle = self.motor.get()[0]
 
                 print("-------\n")
                 print("orange get")
 
+                rel_pos= self.motor.get()[0]
+
                 y=hub.motion.yaw_pitch_roll()[0]
-                hub.motion.yaw_pitch_roll(-89+y)
+                hub.motion.yaw_pitch_roll(-1*self.turn-y)
 
                 self.destination=0
                 self.direction=1
@@ -96,49 +101,10 @@ class Gyro(Basic_motion):
         return check_line
 
 
-    def change_steer2(self,throttle,rot,go_angle,sign_flag,steer):
-        check_line=False
-        blue_camera = (rot == 1)
-        orange_camera = (rot == 2)
-        xx=self.motor.get()[0]
-        #terms_light_sensor = (h >  210-130) and ( h < 210+130) and(s > 256) and (s < 1024) and(v >= 0) and (v <= 1023)
-        if xx-self.straight_rotation>=2200:
 
-            if blue_camera or orange_camera:
-                while sign_flag == 0:
-                    if blue_camera:
-                        super().move(throttle,-125)
-                    elif orange_camera:
-                        suoer().move(throttle,125)
-                    if abs(hub.motion.yaw_pitch_roll()[0]) >= 80:
-                        break
 
-                self.section_count = self.section_count + 1
-                rel_pos= self.motor.get()[0]
-                this_angle=rel_pos
-                while (this_angle-rel_pos)<=go_angle-10:
-                    super().move(throttle,0)
-                    this_angle = self.motor.get()[0]
 
-            if blue_camera:
-                print("-------\n")
-                print("blue get")
 
-                hub.motion.yaw_pitch_roll(90+(hub.motion.yaw_pitch_roll()[0]))
-                self.direction=-1
-                self.straight_rotation=self.motor.get()[0]
-                check_line=True
-
-            elif orange_camera:
-                print("-------\n")
-                print("orange get")
-
-                hub.motion.yaw_pitch_roll(-90+(hub.motion.yaw_pitch_roll()[0]))
-                self.direction=1
-                self.straight_rotation=self.motor.get()[0]
-                check_line=True
-
-        return check_line
 
 
 
@@ -166,29 +132,32 @@ class Gyro(Basic_motion):
                 while hub.motion.yaw_pitch_roll()[0]<=-10:
                     super().move(40,120)
                 while (this_angle-rel_pos)<=go_angle:
-                    self.straightening(65,-13)
+                    self.straightening(65,-20)
                     this_angle = self.motor.get()[0]
                     end=time.ticks_us()
                     if(end-start)/1000 >= 3000:
                         break
 
                 y=hub.motion.yaw_pitch_roll()[0]
-                hub.motion.yaw_pitch_roll(89+y)
+                hub.motion.yaw_pitch_roll(self.turn+y)
                 start=time.ticks_us()
 
-                while hub.motion.yaw_pitch_roll()[0]>=15:
+                while hub.motion.yaw_pitch_roll()[0]>=30:
                     #print("--d_steer--",d_steer)
                     super().move(-70,120)
                     end=time.ticks_us()
                     if(end-start)/1000 >= 3000:
                         break
                 rel_pos = self.motor.get()[0]
-                while self.motor.get()[0]-rel_pos >= 700:
+                while self.motor.get()[0]-rel_pos >= -200:
                     super().move(-70,0)
                     end=time.ticks_us()
                     if(end-start)/1000 >= 4000:
                         break
                 self.straight_rotation=self.motor.get()[0]
+                rel_pos = self.motor.get()[0]
+                while self.motor.get()[0]-rel_pos <= 100:
+                    super().move(50,20)
                 check_line=True
                 self.past_change=1
 
@@ -206,32 +175,80 @@ class Gyro(Basic_motion):
                 while hub.motion.yaw_pitch_roll()[0]>=10:
                     super().move(40,-120)
                 while (this_angle-rel_pos)<=go_angle:
-                    self.straightening(65,13)
+                    self.straightening(65,20)
                     this_angle = self.motor.get()[0]
                     end=time.ticks_us()
                     if(end-start)/1000 >= 3000:
                         break
 
                 y=hub.motion.yaw_pitch_roll()[0]
-                hub.motion.yaw_pitch_roll(-89+y)
+                hub.motion.yaw_pitch_roll(-1*self.turn+y)
 
                 start=time.ticks_us()
 
-                while hub.motion.yaw_pitch_roll()[0]<=-15:
+                while hub.motion.yaw_pitch_roll()[0]<=-30:
                     #print("--d_steer--",d_steer)
                     super().move(-70,-120)
                     end=time.ticks_us()
                     if(end-start)/1000 >= 3000:
                         break
                 rel_pos = self.motor.get()[0]
-                while self.motor.get()[0]-rel_pos >= 800:
+                while self.motor.get()[0]-rel_pos >= -200:
                     super().move(-70,0)
                     end=time.ticks_us()
                     if(end-start)/1000 >= 4000:
                         break
                 self.straight_rotation=self.motor.get()[0]
+                rel_pos = self.motor.get()[0]
+                while self.motor.get()[0]-rel_pos <= 100:
+                    super().move(50,-20)
                 check_line=True
                 self.past_change=1
 
+
+        return check_line
+
+
+    def change_steer2(self,throttle,rot,go_angle,steer):
+        check_line=False
+        blue_camera = (rot == 1)
+        orange_camera = (rot == 2)
+        xx=self.motor.get()[0]
+        #terms_light_sensor = (h >  210-130) and ( h < 210+130) and(s > 256) and (s < 1024) and(v >= 0) and (v <= 1023)
+        if xx-self.straight_rotation>=2200:
+
+            if blue_camera or orange_camera:
+
+                rel_pos= self.motor.get()[0]
+                this_angle=rel_pos
+                while (this_angle-rel_pos)<go_angle:
+                    super().move(throttle,0)
+                    this_angle = self.motor.get()[0]
+
+                while abs(hub.motion.yaw_pitch_roll()[0]) <= 80:
+                    if blue_camera:
+                        super().move(throttle,-125)
+                    elif orange_camera:
+                        super().move(throttle,125)
+                super().move(20,0)
+                self.section_count = self.section_count + 1
+
+            if blue_camera:
+                print("-------\n")
+                print("blue get")
+
+                hub.motion.yaw_pitch_roll(self.turn+(hub.motion.yaw_pitch_roll()[0]))
+                self.direction=-1
+                self.straight_rotation=self.motor.get()[0]
+                check_line=True
+
+            elif orange_camera:
+                print("-------\n")
+                print("orange get")
+
+                hub.motion.yaw_pitch_roll(-1*self.turn+(hub.motion.yaw_pitch_roll()[0]))
+                self.direction=1
+                self.straight_rotation=self.motor.get()[0]
+                check_line=True
 
         return check_line

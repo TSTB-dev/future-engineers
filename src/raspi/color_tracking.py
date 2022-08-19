@@ -9,13 +9,13 @@ def red_detect(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
     # 赤色のHSVの値域1
-    hsv_min = np.array([0,70,25])
+    hsv_min = np.array([0,60,35])
     hsv_max = np.array([0,255,255])
     mask1 = cv2.inRange(hsv, hsv_min, hsv_max)
 
     # 赤色のHSVの値域2
 
-    hsv_min = np.array([150,70,25])
+    hsv_min = np.array([150,60,35])
     hsv_max = np.array([180,255,255])
     mask2 = cv2.inRange(hsv, hsv_min, hsv_max)
     return mask1 + mask2
@@ -27,7 +27,7 @@ def black_detect(img):
 
     # 黒色のHSVの値域
     hsv_min = np.array([0,0,0])
-    hsv_max = np.array([180,255,80])
+    hsv_max = np.array([180,255,90])
     mask1 = cv2.inRange(hsv, hsv_min, hsv_max)
 
     return mask1
@@ -44,8 +44,8 @@ def green_detect(img):
 
     # 緑色のHSVの値域
 
-    hsv_min = np.array([65,140,35])
-    hsv_max = np.array([90,255,255])
+    hsv_min = np.array([55,70,95])
+    hsv_max = np.array([85,255,255])
 
     #hsv_min = np.array([30,100,30])
     #hsv_max = np.array([60,255,255])
@@ -62,7 +62,7 @@ def orange_detect(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
     # orangeのHSVの値域
-    hsv_min = np.array([2,60,60])
+    hsv_min = np.array([5,30,40])
     hsv_max = np.array([30,255,255])
     mask1 = cv2.inRange(hsv, hsv_min, hsv_max)
 
@@ -73,8 +73,8 @@ def blue_detect(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
     #buleHSVの値域
-    hsv_min = np.array([90,68,80])
-    hsv_max = np.array([120,255,255])
+    hsv_min = np.array([85,68,80])
+    hsv_max = np.array([115,255,255])
     mask1 = cv2.inRange(hsv, hsv_min, hsv_max)
 
     return mask1
@@ -229,7 +229,7 @@ def detect_sign_area(cap, mode=""):#標識の面積を返すdetect_sign（面積
 
     frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     #frame_hsv[:, :, (0)] = frame_hsv[:, :, (0)]
-    frame_hsv[:, :, (1)] = np.clip(frame_hsv[:, :, (1)]*1.5,0,255)
+    #frame_hsv[:, :, (1)] = np.clip(frame_hsv[:, :, (1)]*1.5,0,255)
     #frame_hsv[:, :, (2)] = np.clip(frame_hsv[:, :, (2)]*1.5,0,255)
     frame = cv2.cvtColor(frame_hsv, cv2.COLOR_HSV2BGR)
     #frame[:,:,(1)] = np.clip(frame[:,:,(1)] * 1.5,0,255)
@@ -258,30 +258,30 @@ def detect_sign_area(cap, mode=""):#標識の面積を返すdetect_sign（面積
     cv2.imshow("Mask green", mask_green)"""
 
     height, width, channels = frame.shape[:3]
-    mask_red[0:int(2 * height/5),:] = 0
-    mask_green[0:int(2 * height/5),:] = 0
+    mask_red[0:int(4.5 * height/10),:] = 0
+    mask_green[0:int(4.5 * height/10),:] = 0
     mask_blue[0:int(3 * height/5),:] = 0
     mask_orange[0:int(3 * height/5),:] = 0
 
-    mask_black_left[0:int(height/2),:] = 0
-    mask_black_left[int(height/2):int(height),int(width/2):int(width)] = 0
+    mask_black_left[0:int(2 * height/3),:] = 0
+    mask_black_left[int(2 * height/3):int(height),int(width/2):int(width)] = 0
 
-    mask_black_right[0:int(height/2),:] = 0
-    mask_black_right[int(height/2):int(height),0:int(width/2)] = 0
+    mask_black_right[0:int(2 * height/3),:] = 0
+    mask_black_right[int(2 *height/3):int(height),0:int(width/2)] = 0
 
-    mask_black_right_middle[0:int(height/3),:] = 0
-    mask_black_right_middle[int(height/3):int(2 * height/3),0:int(width/2)] = 0
-    mask_black_right_middle[int(2 * height/3):int(height),] = 0
+    mask_black_right_middle[0:int(3 * height/6),:] = 0
+    mask_black_right_middle[int(3*height/6):int(5 * height/6),0:int(width/2)] = 0
+    mask_black_right_middle[int(5 * height/6):int(height),] = 0
 
-    mask_black_left_middle[0:int(height/3),:] = 0
-    mask_black_left_middle[int(height/3):int(2 * height/3),int(width/2):int(width)] = 0
-    mask_black_left_middle[int(2 * height/3):int(height),] = 0
+    mask_black_left_middle[0:int(3 * height/6),:] = 0
+    mask_black_left_middle[int(3 * height/6):int(5 * height/6),int(width/2):int(width)] = 0
+    mask_black_left_middle[int(5 * height/6):int(height),] = 0
 
 
-    mask_black_core[0:int(2 * height/5),:] = 0
-    mask_black_core[int(2 * height/5):int(4 * height/5),0:int(width/5)] = 0
-    mask_black_core[int(2 * height/5):int(4 * height/5),int(4 * width/5):int(width)] = 0
-    mask_black_core[int(4 * height/5):int(height),:] = 0
+    mask_black_core[0:int(3 * height/5),:] = 0
+    mask_black_core[int(3 * height/5):int(5 * height/5),0:int(width/5)] = 0
+    mask_black_core[int(3 * height/5):int(5 * height/5),int(4 * width/5):int(width)] = 0
+    #mask_black_core[int(4 * height/5):int(height),:] = 0
 
     """if cv2.waitKey(25) & 0xFF == ord('q'):
         cv2.destroyAllWindows()"""
@@ -303,16 +303,16 @@ def detect_sign_area(cap, mode=""):#標識の面積を返すdetect_sign（面積
     black_right_middle_area = blob_black_right_middle["area"]
     black_core_area = blob_black_core["area"]
 
-    black_right_raito = black_right_area * 4 / (width * height)
-    black_left_raito = black_left_area * 4 / (width * height)
+    black_right_raito = black_right_area * 6 / (width * height)
+    black_left_raito = black_left_area * 6 / (width * height)
     black_left_middle_raito = black_left_middle_area * 6 / (width * height)
     black_right_middle_raito = black_right_middle_area * 6 / (width * height)
     black_core_raito = black_core_area * ((5/2) * (5/3))/(width * height)
 
 
-    if black_left_raito < black_left_middle_raito and black_left_middle_raito > 0.9:
+    if black_left_raito < black_left_middle_raito and black_left_middle_raito > 0.85 and black_left_raito > 0.55:
         black_left_raito = black_left_middle_raito
-    if black_right_raito < black_right_middle_raito and black_right_middle_raito > 0.9:
+    if black_right_raito < black_right_middle_raito and black_right_middle_raito > 0.85 and black_right_raito > 0.55:
         black_right_raito = black_right_middle_raito
 
     #print("right_raito,left_raito:",black_right_raito,black_left_raito)
@@ -322,7 +322,7 @@ def detect_sign_area(cap, mode=""):#標識の面積を返すdetect_sign（面積
     elif black_left_raito > 0.68:
         wall_left = True
     if not wall_right and not wall_left:
-        if black_core_raito > 0.6:
+        if black_core_raito > 0.53 or (black_left_raito > 0.6 and black_right_raito > 0.6):
             black_left_raito = 0.9
             black_right_raito = 0.9
 
