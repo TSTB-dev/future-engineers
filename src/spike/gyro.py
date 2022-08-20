@@ -127,7 +127,7 @@ class Gyro(Basic_motion):
                 self.section_count = self.section_count + 1
                 self.sign_count = 0
 
-                while hub.motion.yaw_pitch_roll()[0]<10:
+                while hub.motion.yaw_pitch_roll()[0]<5:
                     super().move(40,100)
                 rel_pos= self.motor.get()[0]
                 this_angle=rel_pos
@@ -172,7 +172,7 @@ class Gyro(Basic_motion):
                 self.section_count = self.section_count + 1
                 self.sign_count = 0
 
-                while hub.motion.yaw_pitch_roll()[0]>-10:
+                while hub.motion.yaw_pitch_roll()[0]>-5:
                     super().move(40,-100)
                 rel_pos= self.motor.get()[0]
                 this_angle=rel_pos

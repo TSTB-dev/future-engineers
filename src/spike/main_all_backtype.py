@@ -1,4 +1,5 @@
 # ここにコードを書いてね :-)
+# ここにコードを書いてね :-)
 import hub
 import time
 import re
@@ -77,7 +78,7 @@ if True:
     while True:
         cmd = ""
         if gyro.section_count == 11:
-            if gyro.past_change==0 and (motor.get()[0]-last_run >= 1800):
+            if gyro.past_change==0 and (motor.get()[0]-last_run >= 1600):
                 basic.stop()
                 break
             elif gyro.past_change==1 and (motor.get()[0]-last_run >= 2100):
@@ -299,11 +300,14 @@ if True:
         orange_camera = (rot == 2)
         #terms_light_sensor = (h >  210-130) and ( h < 210+130) and(s > 256) and (s < 1024) and(v >= 0) and (v <= 1023)
 
-        """
-        if gyro.change_steer(40,rot,0):
+        ga=2200
+        if side_flag==1:
+            ga=1600
+        if gyro.back_turn(50,rot,ga):
             gyro.sign_count = 0
             print("section_count:",gyro.section_count)
-                #print(memory_sign)
+            last_run=motor.get()[0]
+            #print(memory_sign)
         """
 
         if sign_flag == 1 or sign_flag == 2:
@@ -343,7 +347,7 @@ if True:
                     print("section_count:",gyro.section_count)
                     last_run=motor.get()[0]
             #print(memory_sign)
-
+        """
 
 
         """

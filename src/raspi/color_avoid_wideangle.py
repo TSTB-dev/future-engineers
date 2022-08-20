@@ -552,23 +552,23 @@ while True:
             if sign_flag != 1:
                 sign_flag = 4
                 steer = -100
-                speed = 30
+                speed = 50
         else:
             if sign_flag != 2:
                 sign_flag = 4
                 steer = -100
-                speed = 30
+                speed = 50
     elif wall_left:
         if rotation_mode == "blue":
             if sign_flag != 1:
                 sign_flag = 4
                 steer = 100
-                speed = 30
+                speed = 50
         else:
             if sign_flag != 2:
                 sign_flag = 4
                 steer = 100
-                speed = 30
+                speed = 50
     if wall_right and wall_left:
         sign_flag = 5
 
