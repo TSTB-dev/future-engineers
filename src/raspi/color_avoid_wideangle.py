@@ -9,8 +9,8 @@ import numpy as np
 ser = serial.Serial("/dev/ttyAMA1", 115200)
 throttle = 20
 
-data_dir = "/home/pi/WRO2022/data"
-save_dir = os.path.join(data_dir, "train")
+data_dir = "/home/pi/data"
+save_dir = os.path.join(data_dir)
 SAVE_FPS = 0.5
 
 
@@ -88,7 +88,6 @@ while True:
         blue_center_y,
         orange_center_y,
         frame,
-        frame_,
         mask_red,
         mask_green,
         black_right_raito,
@@ -128,10 +127,10 @@ while True:
     # #print("green_raito",green_raito)
     # #print("red_raito",red_raito)
 
-    if mode == "get_img" and elapsed_time > 1 / SAVE_FPS:
+    if mode == "get_img" and elapsed_time > 1 / SAVE_FPS and _id < 1000:
         id_path = "{:06}.jpg".format(_id)
         frame_path = os.path.join(save_dir, id_path)
-        cv2.imwrite(frame_path, frame_)
+        cv2.imwrite(frame_path, frame)
         _id += 1
         elapsed_time = 0
     if rotation_mode == "":  # 周回の向き決定
@@ -163,7 +162,7 @@ while True:
                 if (
                     rotation_mode == "orange"
                     and ok_orange
-                    and green_raito > 0.001
+                    and green_raito > 0.003
                     and center_green_x / width >= 0.1
                     and center_green_x / width <= 0.8
                 ):
@@ -289,7 +288,7 @@ while True:
                 # steer = steer * 2
                 if black_right_raito > 0.15 and (rotation_mode == "orange"):
                     if (
-                        red_raito < 0.03
+                        red_raito < 0.02
                         and orange_center_y > 0.6
                         and orange_center_y < 0.8
                         and center_raito_red < 0.5
@@ -299,7 +298,7 @@ while True:
                         # steer = -80
                         speed = 50
                     elif (
-                        red_raito < 0.03
+                        red_raito < 0.02
                         and orange_center_y >= 0.8
                         and orange_center_y < 1
                         and center_raito_red < 0.5
@@ -329,9 +328,9 @@ while True:
                     and ok_blue
                     and center_red_x / width <= 0.9
                     and center_red_x / width > 0.2
-                    and red_raito > 0.001
+                    and red_raito > 0.003
                 ):
-                    if red_raito > 0.001:
+                    if red_raito > 0.003:
                         force_sign = 1
                         sign_flag = 1
                 wide = (center_green_x / width) - 0.5 - 0.2
@@ -452,7 +451,7 @@ while True:
 
                 if black_left_raito > 0.15 and (rotation_mode == "blue"):
                     if (
-                        green_raito < 0.03
+                        green_raito < 0.02
                         and blue_center_y > 0.6
                         and blue_center_y < 0.8
                         and center_raito_green > 0.5
@@ -462,7 +461,7 @@ while True:
                         speed = 50
                         # steer = 80
                     elif (
-                        green_raito < 0.03
+                        green_raito < 0.02
                         and blue_center_y >= 0.8
                         and blue_center_y < 1
                         and center_raito_green > 0.5
@@ -496,14 +495,14 @@ while True:
             blue_center_y < 0.75
             and sign_flag == 2
             and center_green_x / width < 0.7
-            and green_raito < 0.012
+            and green_raito < 0.01
         ):
             sign_flag = 6
             rmode = 1
             steer = 50
         if (
             black_left_raito > 0.3
-            or (sign_flag == 2 and center_green_x / width > 0.7 and green_raito < 0.012)
+            or (sign_flag == 2 and center_green_x / width > 0.7 and green_raito < 0.01)
         ) and blue_center_y < 1:
             rmode = 1
             sign_flag = 6
@@ -525,14 +524,14 @@ while True:
             orange_center_y < 0.75
             and sign_flag == 1
             and center_red_x / width > 0.3
-            and red_raito < 0.012
+            and red_raito < 0.01
         ):
             sign_flag = 6
             rmode = 2
             steer = -50
         if (
             black_right_raito > 0.3
-            or (sign_flag == 1 and center_red_x / width < 0.4 and red_raito < 0.012)
+            or (sign_flag == 1 and center_red_x / width < 0.4 and red_raito < 0.01)
         ) and orange_center_y < 1:
             rmode = 2
             sign_flag = 6
@@ -606,7 +605,7 @@ while True:
     if force_sign != -1:
         sign_flag = force_sign
     cmd = "{:4d},{:3d},{},{},{}@".format(steer_int, speed, sign_flag, rmode, side_flag)
-    ##print("write: {}".format(cmd))
+    print("write: {}".format(cmd))
     #print("blue",blue_center_y)
     ser.write(cmd.encode("utf-8"))
 
