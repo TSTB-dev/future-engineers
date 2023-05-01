@@ -1,12 +1,13 @@
-Engineering materials [石川高専B]
+Engineering materials [石川高専A]
 ====
 This repository contains materials for participating in WRO Future Engineers2022.
 
 ## Team members.
 ***
-Shinichi Uno
-Toshiyuki Mannen
-Shunsuke Sakai (Coach)
+
+Takeru NAGASAWA
+Masaki KATO
+Makoto KOSHINO (Coach)
 
 ## Contents
 ***
